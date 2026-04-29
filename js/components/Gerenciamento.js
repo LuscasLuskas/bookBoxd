@@ -1,4 +1,4 @@
-import { StorageService } from '../services/StorageService.js';
+import { ClubService } from '../services/ClubService.js';
 
 // Estado global deste módulo para lembrar se o admin já fez login nesta sessão
 let isAdminLoggedIn = false;
@@ -7,7 +7,7 @@ export function Gerenciamento(currentUser, onUpdate) {
     const container = document.createElement('section');
     container.className = 'animate-fadeIn max-w-2xl mx-auto flex flex-col justify-center min-h-[60vh]';
 
-    // FUNÇÃO 1: Renderiza o ecrã de Login da Gestão
+    // Ecrã de Login da Gestão
     const renderLogin = () => {
         container.innerHTML = `
             <div class="bg-letterboxd-panel p-8 rounded-lg shadow-2xl border border-gray-700 w-full max-w-md mx-auto">
@@ -47,7 +47,7 @@ export function Gerenciamento(currentUser, onUpdate) {
         });
     };
 
-    // FUNÇÃO 2: Renderiza o Painel de Gestão (após login correto)
+    // Painel de Gestão (após login correto)
     const renderDashboard = () => {
         container.className = 'space-y-12 animate-fadeIn max-w-2xl mx-auto';
         container.innerHTML = `
@@ -100,16 +100,25 @@ export function Gerenciamento(currentUser, onUpdate) {
             </div>
         `;
 
-        // Lógica para adicionar o livro oficial
-        container.querySelector('#form-livro-clube').addEventListener('submit', (e) => {
+        // Lógica assíncrona para adicionar o livro no Python
+        container.querySelector('#form-livro-clube').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            const bookData = Object.fromEntries(formData.entries());
             
-            // Usa o novo método criado no ClubService
-            StorageService.club.addClubBook(bookData);
+            // Constrói o objeto de dados a partir do formulário
+            const bookData = {
+                title: formData.get('title'),
+                author: formData.get('author'),
+                cover: formData.get('cover'),
+                totalPages: parseInt(formData.get('totalPages')),
+                totalChapters: parseInt(formData.get('totalChapters'))
+            };
+            
+            // Chama a API do Backend
+            await ClubService.addClubBook(bookData);
+            
             alert(`"${bookData.title}" foi adicionado com sucesso ao Clube do Livro!`);
-            e.target.reset();
+            e.target.reset(); // Limpa o formulário
         });
 
         // Lógica para trancar a sessão de admin

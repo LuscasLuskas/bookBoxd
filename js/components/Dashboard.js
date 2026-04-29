@@ -1,22 +1,26 @@
-import { StorageService } from '../services/StorageService.js';
-import { ReadingController } from '../utils/ReadingController.js';
+import { AuthService } from '../services/AuthService.js';
+import { ClubService } from '../services/ClubService.js';
+// ATENÇÃO: Verifique se o caminho abaixo bate certo com a pasta onde está o seu ReadingController.js
+import { ReadingController } from '../utils/ReadingController.js'; 
 import { Biblioteca } from './Biblioteca.js';
-import { Gerenciamento } from './Gerenciamento.js'; // Importação nova
+import { Gerenciamento } from './Gerenciamento.js';
+import { MinhaBiblioteca } from './MinhaBiblioteca.js';
 
-export function Dashboard(user, onLogout) {
+export async function Dashboard(user, onLogout) {
     const container = document.createElement('div');
     container.className = 'flex-grow flex flex-col w-full';
 
-    // Para redesenhar a interface se a foto mudar
-    const reRender = () => {
-        const updatedUser = StorageService.auth.getUser(user.username);
+    // Para redesenhar a interface se os dados mudarem
+    const reRender = async () => {
+        const updatedUser = await AuthService.getUser(user.username);
         const parent = container.parentNode;
         if (parent) {
             parent.innerHTML = '';
-            parent.appendChild(Dashboard(updatedUser, onLogout));
+            parent.appendChild(await Dashboard(updatedUser, onLogout));
         }
     };
 
+    // Estrutura HTML base do Dashboard
     container.innerHTML = `
         <header class="bg-letterboxd-panel border-b border-gray-700 p-4 sticky top-0 z-50">
             <div class="max-w-6xl mx-auto flex justify-between items-center">
@@ -26,6 +30,7 @@ export function Dashboard(user, onLogout) {
                     </h1>
                     <nav class="hidden md:flex gap-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">
                         <button id="nav-home" class="hover:text-white transition">Início</button>
+                        <button id="nav-minha-biblioteca" class="hover:text-white transition">Minha Biblioteca</button>
                         <button id="nav-biblioteca" class="hover:text-white transition">Biblioteca Central</button>
                         <button id="nav-gestao" class="hover:text-white transition">Gestão</button>
                     </nav>
@@ -37,29 +42,33 @@ export function Dashboard(user, onLogout) {
                 </div>
             </div>
         </header>
-        <main id="main-content" class="max-w-6xl mx-auto w-full p-6 space-y-12">
-            </main>
+        <main id="main-content" class="max-w-6xl mx-auto w-full p-6 space-y-12"></main>
     `;
 
     const mainContent = container.querySelector('#main-content');
+    
+    // Mapeamento dos botões
     const navButtons = {
         home: container.querySelector('#nav-home'),
+        minhabiblio: container.querySelector('#nav-minha-biblioteca'),
         biblio: container.querySelector('#nav-biblioteca'),
         gestao: container.querySelector('#nav-gestao')
     };
 
     container.querySelector('#logout-btn').addEventListener('click', onLogout);
 
+    // FUNÇÃO QUE ESTAVA A FALTAR: Responsável por mudar a aba ativa no menu
     function setActiveNav(activeKey) {
         Object.values(navButtons).forEach(btn => btn.classList.remove('text-white', 'border-b-2', 'border-letterboxd-green', 'pb-1'));
         navButtons[activeKey].classList.add('text-white', 'border-b-2', 'border-letterboxd-green', 'pb-1');
     }
 
-    function showHome() {
+    async function showHome() {
         setActiveNav('home');
+        mainContent.innerHTML = '<p class="text-white text-center">A carregar livros do clube...</p>';
         
-        // AGORA USA O MÓDULO CLUB
-        const clubBooks = StorageService.club.getClubBooks();
+        // Pede os dados ao Backend (Python)
+        const clubBooks = await ClubService.getClubBooks();
         const activeBook = clubBooks[0]; // Assume o primeiro do clube
 
         if (!activeBook) {
@@ -75,7 +84,7 @@ export function Dashboard(user, onLogout) {
                 <div class="flex justify-between items-end border-b border-gray-700 pb-2 mb-4">
                     <h2 class="text-xl text-white uppercase tracking-wider font-semibold">Leitura do Mês</h2>
                 </div>
-                <div class="bg-letterboxd-panel p-6 rounded-lg flex items-center space-x-6">
+                <div class="bg-letterboxd-panel p-6 rounded-lg flex items-center space-x-6 shadow-lg border border-gray-700">
                     <div class="w-24 h-36 bg-gray-800 rounded book-cover flex-shrink-0 flex items-center justify-center relative overflow-hidden">
                         <img src="${activeBook.cover}" class="absolute inset-0 w-full h-full object-cover">
                     </div>
@@ -101,18 +110,21 @@ export function Dashboard(user, onLogout) {
         `;
 
         const btnMarcar = mainContent.querySelector('#btn-marcar-leitura');
-        btnMarcar.addEventListener('click', () => {
+        btnMarcar.addEventListener('click', async () => {
             controlador.registrarLeitura();
-            // AGORA USA O MÓDULO CLUB
-            StorageService.club.updateProgress(activeBook.id, controlador.unidadesConcluidas);
-            showHome(); // Atualiza o ecrã para refletir a nova barra de progresso
+            
+            // Atualiza o progresso no backend Python
+            await ClubService.updateProgress(activeBook.id, controlador.unidadesConcluidas);
+            showHome(); // Atualiza o ecrã
         });
     }
 
-    function showBiblioteca() {
+    async function showBiblioteca() {
         setActiveNav('biblio');
+        mainContent.innerHTML = '<div class="text-center mt-10"><i class="fas fa-spinner fa-spin text-letterboxd-green text-3xl"></i></div>';
+        const bibliotecaElement = await Biblioteca();
         mainContent.innerHTML = '';
-        mainContent.appendChild(Biblioteca());
+        mainContent.appendChild(bibliotecaElement);
     }
 
     function showGestao() {
@@ -121,11 +133,22 @@ export function Dashboard(user, onLogout) {
         mainContent.appendChild(Gerenciamento(user, reRender));
     }
 
+    async function showMinhaBiblioteca() {
+        setActiveNav('minhabiblio');
+        mainContent.innerHTML = '<div class="text-center mt-10"><i class="fas fa-spinner fa-spin text-letterboxd-green text-3xl"></i></div>';
+        
+        // Chamamos o componente e passamos 'showMinhaBiblioteca' para ele se auto-atualizar ao adicionar livros
+        const minhaBiblioElement = await MinhaBiblioteca(user, showMinhaBiblioteca);
+        mainContent.innerHTML = '';
+        mainContent.appendChild(minhaBiblioElement);
+    }
+    // Liga os cliques dos menus às funções respetivas
     navButtons.home.addEventListener('click', showHome);
     navButtons.biblio.addEventListener('click', showBiblioteca);
     navButtons.gestao.addEventListener('click', showGestao);
-
-    showHome(); // Inicia na aba Início
+    navButtons.minhabiblio.addEventListener('click', showMinhaBiblioteca);
+    // Inicia a aplicação na aba Início
+    showHome(); 
 
     return container;
 }
