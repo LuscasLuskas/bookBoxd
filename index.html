@@ -4,16 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BookBoxd - Clube do Livro</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <link rel="stylesheet" href="css/style.css">
+    
     <script>
         tailwind.config = {
-            theme: { extend: { colors: { 'letterboxd-bg': '#14181c', 'letterboxd-panel': '#2c3440', 'letterboxd-green': '#00e054', 'letterboxd-blue': '#40bcf4' } } }
+            theme: { 
+                extend: { 
+                    colors: { 
+                        'letterboxd-bg': '#14181c', 
+                        'letterboxd-panel': '#2c3440', 
+                        'letterboxd-green': '#00e054', 
+                        'letterboxd-blue': '#40bcf4' 
+                    } 
+                } 
+            }
         }
     </script>
 </head>
-<body class="antialiased min-h-screen flex flex-col" id="app-root">
+<body class="antialiased min-h-screen flex flex-col bg-letterboxd-bg" id="app-root">
+    
+    <div class="flex-grow flex items-center justify-center h-screen" id="initial-loader">
+        <div class="text-center animate-fadeIn">
+            <i class="fas fa-circle-notch fa-spin text-4xl text-letterboxd-green mb-4"></i>
+            <p class="text-gray-400 font-bold uppercase tracking-widest text-sm mt-2">A carregar BookBoxd...</p>
+        </div>
+    </div>
+
     <script type="module" src="js/app.js"></script>
 </body>
 </html>

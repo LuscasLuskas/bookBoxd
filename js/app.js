@@ -1,9 +1,6 @@
-import { StorageService } from './services/StorageService.js';
+import { AuthService } from './services/AuthService.js';
 import { Login } from './components/Login.js';
 import { Dashboard } from './components/Dashboard.js';
-
-// Inicializa a base de dados
-StorageService.init();
 
 const root = document.getElementById('app-root');
 
@@ -12,20 +9,23 @@ function mountLogin() {
     root.appendChild(Login(handleLoginAttempt));
 }
 
-function handleLoginAttempt(username) {
-    // AGORA USA O MÓDULO AUTH
-    const userData = StorageService.auth.getUser(username);
+// Agora a função é assíncrona
+async function handleLoginAttempt(username) {
+    const userData = await AuthService.getUser(username);
     
     if (userData) {
         mountDashboard(userData);
     } else {
-        alert('Utilizador não encontrado! Tente "lucas"');
+        alert('Utilizador não encontrado! Tente "outro"');
     }
 }
 
-function mountDashboard(userData) {
+async function mountDashboard(userData) {
+    root.innerHTML = '<div class="text-white text-center mt-10">A carregar interface...</div>';
+    // O Dashboard agora devolve uma Promise, por isso usamos await
+    const dashboardElement = await Dashboard(userData, mountLogin);
     root.innerHTML = '';
-    root.appendChild(Dashboard(userData, mountLogin));
+    root.appendChild(dashboardElement);
 }
 
 mountLogin();
