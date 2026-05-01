@@ -1,0 +1,7 @@
+from app.infrastructure.db.repositories.user_repository import UserRepository
+from app.infrastructure.db.repositories.book_repository import BookRepository
+from app.infrastructure.db.repositories.book_club_repository import BookClubRepository
+from app.infrastructure.db.repositories.membership_repository import MembershipRepository
+from app.infrastructure.db.repositories.club_book_repository import ClubBookRepository
+from app.infrastructure.db.repositories.user_book_repository import UserBookRepository
+from app.infrastructure.db.repositories.access_log_repository import AccessLogRepository
