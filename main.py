@@ -3,6 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import time
 import requests
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+GOOGLE_BOOKS_API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
 
 app = FastAPI()
 
@@ -100,12 +105,20 @@ class BookCreateExternal(BaseModel):
 
 # 2. NOVA ROTA: Buscar no Google Books (A lógica do seu escavator.py)
 @app.get("/books/search")
+
 def search_books(q: str):
-    # Faz a requisição à API do Google Books
-    # Pode adicionar a sua API_KEY na URL futuramente: f"&key={SUA_CHAVE}"
-    response = requests.get(f"https://www.googleapis.com/books/v1/volumes?q={q}&maxResults=12")
+    url = "https://www.googleapis.com/books/v1/volumes"
+    
+    # Parâmetros limpos: NENHUMA chave de API será enviada
+    params = {
+        "q": q,
+        "maxResults": 12
+    }
+    
+    response = requests.get(url, params=params)
     
     if response.status_code != 200:
+        print(f"[ERRO GOOGLE BOOKS] Status: {response.status_code} | Resposta: {response.text}")
         return []
         
     data = response.json()
@@ -113,9 +126,9 @@ def search_books(q: str):
     
     for item in data.get("items", []):
         vol = item.get("volumeInfo", {})
-        # Busca o ISBN para a capa
-        cover_url = vol.get("imageLinks", {}).get("thumbnail", "https://placehold.co/150x225/2c3440/9ab?text=Sem+Capa")
-        # Garante que usamos https para não bloquear no navegador
+        
+        image_links = vol.get("imageLinks") or {}
+        cover_url = image_links.get("thumbnail", "https://placehold.co/150x225/2c3440/9ab?text=Sem+Capa")
         cover_url = cover_url.replace("http://", "https://")
         
         results.append({
@@ -123,10 +136,49 @@ def search_books(q: str):
             "title": vol.get("title", "Sem Título"),
             "author": ", ".join(vol.get("authors", [])) if vol.get("authors") else "Autor Desconhecido",
             "cover": cover_url,
-            "totalPages": vol.get("pageCount", 200) # Se o Google não tiver as páginas, assumimos 200
+            "totalPages": vol.get("pageCount", 200)
         })
         
     return results
+
+#def search_books(q: str):
+   # url = "https://www.googleapis.com/books/v1/volumes"
+    
+    # O 'requests' vai formatar os espaços e acentos automaticamente
+   # params = {
+   #    "q": q,
+    #    "maxResults": 12,
+    #    "key": GOOGLE_BOOKS_API_KEY # Usando a chave para evitar bloqueios
+    #}
+    
+    #response = requests.get(url, params=params)
+    
+    # Se não for 200, imprime o erro no terminal para facilitar o debug
+   # if response.status_code != 200:
+    #    print(f"[ERRO GOOGLE BOOKS] Status: {response.status_code} | Resposta: {response.text}")
+   #     return []
+        
+    #data = response.json()
+    #results = []
+    
+    #for item in data.get("items", []):
+     #   vol = item.get("volumeInfo", {})
+        
+        # O 'or {}' previne um erro caso o Google retorne "imageLinks": null no JSON
+      #  image_links = vol.get("imageLinks") or {}
+      #  cover_url = image_links.get("thumbnail", "https://placehold.co/150x225/2c3440/9ab?text=Sem+Capa")
+      #  cover_url = cover_url.replace("http://", "https://")
+        
+     #   results.append({
+     #       "id": item.get("id"),
+     #       "title": vol.get("title", "Sem Título"),
+     #       "author": ", ".join(vol.get("authors", [])) if vol.get("authors") else "Autor Desconhecido",
+     #       "cover": cover_url,
+     #       "totalPages": vol.get("pageCount", 200)
+    #    })
+        
+    #return results
+
 
 # 3. NOVA ROTA: Guardar livro na Minha Biblioteca
 @app.post("/books/external")
