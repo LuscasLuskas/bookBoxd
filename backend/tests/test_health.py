@@ -5,11 +5,10 @@ from app.main import app
 
 @pytest.fixture
 def client():
-    """Test client fixture"""
     return TestClient(app)
 
 
-def test_health_check(client):
+def test_health_check(client: TestClient):
     """Test health check endpoint"""
     response = client.get("/health/")
     assert response.status_code == 200
