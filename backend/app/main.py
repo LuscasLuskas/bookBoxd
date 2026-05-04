@@ -42,3 +42,12 @@ app.include_router(clubs_router, prefix="/clubs", tags=["clubs"])
 app.include_router(memberships_router, prefix="/memberships", tags=["memberships"])
 app.include_router(users_router, prefix="/users", tags=["users"])
 app.include_router(health_router, prefix="/health", tags=["health"])
+
+@app.get("/")
+async def root():
+    return {
+        "message": "Welcome to BookBoxd API",
+        "docs": "/docs",
+        "health": "/health",
+        "version": "1.0.0"
+    }

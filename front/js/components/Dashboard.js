@@ -69,6 +69,15 @@ export async function Dashboard(user, onLogout) {
         
         // Pede os dados ao Backend (Python)
         const clubBooks = await ClubService.getClubBooks();
+        
+        // Adiciona campos padrão para demo
+        clubBooks.forEach(book => {
+            book.totalPages = 300;
+            book.totalChapters = 10;
+            book.currentProgress = 0;
+            book.cover = 'https://via.placeholder.com/150x200';
+        });
+        
         const activeBook = clubBooks[0]; // Assume o primeiro do clube
 
         if (!activeBook) {

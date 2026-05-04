@@ -9,6 +9,10 @@ class BookRepository:
         result = await session.execute(select(Book).where(Book.id == book_id))
         return result.scalars().first()
 
+    async def get_all(self, session: AsyncSession):
+        result = await session.execute(select(Book))
+        return result.scalars().all()
+
     async def list_by_created_by(self, session: AsyncSession, user_id):
         result = await session.execute(select(Book).where(Book.created_by == user_id))
         return result.scalars().all()
