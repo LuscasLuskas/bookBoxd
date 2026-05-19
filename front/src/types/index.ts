@@ -1,0 +1,93 @@
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'user' | 'master';
+  created_at: string;
+}
+
+export interface Book {
+  id: string;
+  title: string;
+  author: string;
+  synopsis: string | null;
+  created_by: string | null;
+  created_by_name_snapshot: string | null;
+  created_at: string;
+}
+
+export interface BookListResponse {
+  items: Book[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface BookClub {
+  id: string;
+  name: string;
+  description: string | null;
+  owner_id: string;
+  created_at: string;
+}
+
+export type MembershipStatus =
+  | 'PENDING'
+  | 'ACTIVE'
+  | 'LEFT'
+  | 'REJECTED'
+  | 'BANNED'
+  | 'KICKED';
+
+export interface Membership {
+  id: string;
+  user_id: string;
+  club_id: string;
+  status: MembershipStatus;
+  kicked_until: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MembershipListResponse {
+  items: Membership[];
+  total: number;
+}
+
+export type UserBookStatus =
+  | 'WISHLIST'
+  | 'ADDED'
+  | 'READING'
+  | 'COMPLETED'
+  | 'DROPPED';
+
+export interface UserBook {
+  id: string;
+  user_id: string;
+  book_id: string;
+  status: UserBookStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserBookListResponse {
+  items: UserBook[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface ClubBook {
+  id: string;
+  club_id: string;
+  book_id: string;
+  added_by: string | null;
+  created_at: string;
+}
+
+export interface ClubBookListResponse {
+  items: ClubBook[];
+  total: number;
+  limit: number;
+  offset: number;
+}
