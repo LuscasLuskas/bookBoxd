@@ -91,3 +91,56 @@ export interface ClubBookListResponse {
   limit: number;
   offset: number;
 }
+
+export type ReadingUnit = 'PAGE' | 'CHAPTER';
+export type GoalFrequency = 'DAILY' | 'WEEKLY';
+
+export interface MonthlyBook {
+  id: string;
+  club_id: string;
+  book_id: string;
+  book_title: string;
+  book_author: string;
+  set_by: string | null;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  cycle_days: number;
+  days_elapsed: number;
+  days_remaining: number;
+  member_count: number;
+}
+
+export interface MonthlyBookListResponse {
+  items: MonthlyBook[];
+  total: number;
+}
+
+export interface ReadingRegister {
+  id: string;
+  monthly_book_id: string;
+  user_id: string;
+  user_name: string;
+  unit: ReadingUnit;
+  goal_frequency: GoalFrequency;
+  total_amount: number | null;
+  current_position: number;
+  is_configured: boolean;
+  amount_remaining: number | null;
+  days_remaining: number;
+  weeks_remaining: number;
+  daily_goal: number | null;
+  weekly_goal: number | null;
+  current_goal: number | null;
+  progress_percent: number;
+  expected_position: number | null;
+  on_pace: boolean | null;
+  is_completed: boolean;
+  updated_at: string;
+}
+
+export interface RegisterListResponse {
+  monthly_book: MonthlyBook;
+  items: ReadingRegister[];
+  total: number;
+}

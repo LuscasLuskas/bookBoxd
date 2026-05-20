@@ -10,7 +10,7 @@ from app.controllers import (
     user_controller,
 )
 from app.middlewares.access_log_middleware import AccessLogMiddleware
-from app.controllers import auth_controller, book_club_controller, book_controller, club_book_controller, membership_controller, user_book_controller
+from app.controllers import auth_controller, book_club_controller, book_controller, club_book_controller, membership_controller, monthly_book_controller, user_book_controller
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -53,4 +53,5 @@ app.include_router(book_controller.router)
 app.include_router(book_club_controller.router)
 app.include_router(membership_controller.router)
 app.include_router(club_book_controller.router)
+app.include_router(monthly_book_controller.router)
 app.include_router(user_book_controller.router)

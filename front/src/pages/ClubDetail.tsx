@@ -13,10 +13,12 @@ import {
 } from '../api/membership';
 import { listClubBooks, addBookToClub, removeBookFromClub } from '../api/clubBooks';
 import { getBook, listBooks } from '../api/books';
+import { listMonthlyBooks, setMonthlyBook } from '../api/monthlyBooks';
 import { useAuth } from '../contexts/AuthContext';
 import { MembershipBadge } from '../components/StatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
 import BookCard from '../components/BookCard';
+import MonthlyBookCard from '../components/MonthlyBookCard';
 import type { ClubBook } from '../types';
 
 function ClubBookTile({
@@ -57,7 +59,7 @@ function ClubBookTile({
   );
 }
 
-type Tab = 'books' | 'members';
+type Tab = 'books' | 'members' | 'reading';
 
 export default function ClubDetail() {
   const { id } = useParams<{ id: string }>();
@@ -67,6 +69,8 @@ export default function ClubDetail() {
   const [tab, setTab] = useState<Tab>('books');
   const [showAddBook, setShowAddBook] = useState(false);
   const [bookSearch, setBookSearch] = useState('');
+  const [showSetBook, setShowSetBook] = useState(false);
+  const [mbSearch, setMbSearch] = useState('');
 
   const { data: club, isLoading: loadingClub } = useQuery({
     queryKey: ['club', id],
@@ -94,6 +98,19 @@ export default function ClubDetail() {
 
   const isOwner = club?.owner_id === user?.id;
   const myMembership = membersData?.items.find((m) => m.user_id === user?.id);
+  const isMember = isOwner || myMembership?.status === 'ACTIVE';
+
+  const { data: monthlyBooksData } = useQuery({
+    queryKey: ['monthlyBooks', id],
+    queryFn: () => listMonthlyBooks(id!),
+    enabled: !!id && isMember,
+  });
+
+  const { data: mbSearchResults } = useQuery({
+    queryKey: ['books', 10, 0, { title: mbSearch, ctx: 'monthly' }],
+    queryFn: () => listBooks({ limit: 10, title: mbSearch || undefined }),
+    enabled: showSetBook,
+  });
 
   const invalidateMembers = () => qc.invalidateQueries({ queryKey: ['members', id] });
   const invalidateClubBooks = () => qc.invalidateQueries({ queryKey: ['clubBooks', id] });
@@ -133,6 +150,20 @@ export default function ClubDetail() {
   const removeBookMutation = useMutation({
     mutationFn: (bookId: string) => removeBookFromClub(id!, bookId),
     onSuccess: () => { invalidateClubBooks(); toast.success('Book removed'); },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { detail?: string } } };
+      toast.error(e?.response?.data?.detail || 'Error');
+    },
+  });
+
+  const setMonthlyBookMutation = useMutation({
+    mutationFn: (bookId: string) => setMonthlyBook(id!, bookId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['monthlyBooks', id] });
+      toast.success('Monthly book set!');
+      setShowSetBook(false);
+      setMbSearch('');
+    },
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { detail?: string } } };
       toast.error(e?.response?.data?.detail || 'Error');
@@ -270,7 +301,7 @@ export default function ClubDetail() {
 
       {/* Tabs */}
       <div className="flex gap-0 mb-6 border-b border-bb-border">
-        {(['books', 'members'] as Tab[]).map((t) => (
+        {(['books', 'members', 'reading'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -283,6 +314,7 @@ export default function ClubDetail() {
             {t}
             {t === 'books' && clubBooksData && ` (${clubBooksData.total})`}
             {t === 'members' && membersData && ` (${membersData.total})`}
+            {t === 'reading' && monthlyBooksData && ` (${monthlyBooksData.total})`}
           </button>
         ))}
       </div>
@@ -400,6 +432,54 @@ export default function ClubDetail() {
         </div>
       )}
 
+      {/* Reading tab */}
+      {tab === 'reading' && (
+        <div>
+          {!isMember ? (
+            <div className="text-center py-20 text-bb-muted">
+              Join the club to see and join its reading challenges.
+            </div>
+          ) : (
+            <>
+              {isOwner && (
+                <div className="mb-5">
+                  <button
+                    onClick={() => setShowSetBook(true)}
+                    className="btn-primary"
+                  >
+                    + Set Monthly Book
+                  </button>
+                </div>
+              )}
+              {monthlyBooksData?.items.length === 0 ? (
+                <div className="text-center py-20 text-bb-muted">
+                  No monthly book set yet.
+                  {isOwner && (
+                    <button
+                      onClick={() => setShowSetBook(true)}
+                      className="block mx-auto mt-3 text-bb-accent hover:underline text-sm"
+                    >
+                      Set the first one
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {monthlyBooksData?.items.map((mb) => (
+                    <MonthlyBookCard
+                      key={mb.id}
+                      monthlyBook={mb}
+                      clubId={id!}
+                      isOwner={isOwner}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       {/* Add book modal */}
       {showAddBook && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -454,6 +534,73 @@ export default function ClubDetail() {
                 );
               })}
               {searchResults?.items.length === 0 && (
+                <p className="text-bb-muted text-sm text-center py-6">
+                  No books found
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Set monthly book modal */}
+      {showSetBook && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="card w-full max-w-lg p-6">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-white font-semibold">Set Monthly Book</h2>
+              <button
+                onClick={() => {
+                  setShowSetBook(false);
+                  setMbSearch('');
+                }}
+                className="text-bb-muted hover:text-white text-lg leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <p className="text-bb-muted text-xs mb-4">
+              Starts a 30-day reading cycle and creates a reading register for
+              every active member.
+            </p>
+            <input
+              className="input mb-4"
+              placeholder="Search books by title..."
+              value={mbSearch}
+              onChange={(e) => setMbSearch(e.target.value)}
+              autoFocus
+            />
+            <div className="space-y-1 max-h-72 overflow-y-auto">
+              {mbSearchResults?.items.map((book) => {
+                const active = monthlyBooksData?.items.some(
+                  (mb) => mb.book_id === book.id && mb.is_active
+                );
+                return (
+                  <div
+                    key={book.id}
+                    className="flex items-center justify-between gap-3 p-3 rounded hover:bg-bb-surface transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-bb-text text-sm font-medium truncate">
+                        {book.title}
+                      </p>
+                      <p className="text-bb-muted text-xs">{book.author}</p>
+                    </div>
+                    <button
+                      onClick={() => setMonthlyBookMutation.mutate(book.id)}
+                      disabled={active || setMonthlyBookMutation.isPending}
+                      className={
+                        active
+                          ? 'text-bb-dim text-xs shrink-0'
+                          : 'btn-primary text-xs py-1 px-2 shrink-0'
+                      }
+                    >
+                      {active ? 'Active' : 'Set'}
+                    </button>
+                  </div>
+                );
+              })}
+              {mbSearchResults?.items.length === 0 && (
                 <p className="text-bb-muted text-sm text-center py-6">
                   No books found
                 </p>

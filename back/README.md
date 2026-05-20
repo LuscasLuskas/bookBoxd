@@ -96,6 +96,22 @@ pytest --cov=app tests/
 - `PATCH /me/books/{book_id}` — Atualizar status de leitura
 - `DELETE /me/books/{book_id}` — Remover da biblioteca
 
+### Livros do mês & registro de leitura
+Um clube pode ter vários livros do mês ativos ao mesmo tempo, cada um com seu
+próprio ciclo de 30 dias.
+
+- `POST /clubs/{id}/monthly-books` — Adiciona um livro do mês; inicia um ciclo de 30 dias e cria um registro de leitura para cada membro ativo (owner/MASTER)
+- `GET /clubs/{id}/monthly-books` — Lista os livros do mês do clube
+- `GET /clubs/{id}/monthly-books/{mb_id}` — Detalhe de um livro do mês
+- `DELETE /clubs/{id}/monthly-books/{mb_id}` — Encerra um livro do mês (owner/MASTER)
+- `GET /clubs/{id}/monthly-books/{mb_id}/register` — Registro de leitura pessoal do usuário
+- `PATCH /clubs/{id}/monthly-books/{mb_id}/register` — Atualiza o registro: `unit` (PAGE/CHAPTER), `goal_frequency` (DAILY/WEEKLY), `total_amount`, `current_position`
+- `GET /clubs/{id}/monthly-books/{mb_id}/registers` — Placar de progresso de todos os membros
+
+A meta é dinâmica (modo *catch-up*): `meta = quanto falta ÷ tempo restante`, recalculada
+a cada atualização — sobe se o membro ficar para trás e zera ao concluir. O membro escolhe
+acompanhar por página ou capítulo e ver a meta por dia ou por semana.
+
 ## Status de Membership
 
 `PENDING → ACTIVE | REJECTED`

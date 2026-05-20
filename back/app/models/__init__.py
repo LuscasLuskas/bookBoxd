@@ -5,6 +5,8 @@ from app.models.membership import Membership, MembershipStatus
 from app.models.club_book import ClubBook
 from app.models.user_book import UserBook, UserBookStatus
 from app.models.access_log import AccessLog
+from app.models.club_monthly_book import ClubMonthlyBook
+from app.models.reading_register import GoalFrequency, ReadingRegister, ReadingUnit
 
 __all__ = [
     "User", "Role",
@@ -14,4 +16,6 @@ __all__ = [
     "ClubBook",
     "UserBook", "UserBookStatus",
     "AccessLog",
+    "ClubMonthlyBook",
+    "ReadingRegister", "ReadingUnit", "GoalFrequency",
 ]
