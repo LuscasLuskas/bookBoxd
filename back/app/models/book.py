@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -16,6 +16,10 @@ class Book(Base):
     title: Mapped[str] = mapped_column(String(500), nullable=False, index=True)
     author: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     synopsis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cover_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    external_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    published_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    isbn: Mapped[str | None] = mapped_column(String(20), nullable=True)
     created_by: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )

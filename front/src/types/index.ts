@@ -11,9 +11,22 @@ export interface Book {
   title: string;
   author: string;
   synopsis: string | null;
+  cover_url: string | null;
+  external_id: string | null;
+  published_year: number | null;
+  isbn: string | null;
   created_by: string | null;
   created_by_name_snapshot: string | null;
   created_at: string;
+}
+
+export interface ExternalBookResult {
+  external_id: string;
+  title: string;
+  author: string;
+  cover_url: string | null;
+  published_year: number | null;
+  isbn: string | null;
 }
 
 export interface BookListResponse {

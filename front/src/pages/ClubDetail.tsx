@@ -19,6 +19,8 @@ import { MembershipBadge } from '../components/StatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
 import BookCard from '../components/BookCard';
 import MonthlyBookCard from '../components/MonthlyBookCard';
+import AddBookModal from '../components/AddBookModal';
+import { avatarSrc } from '../utils/avatar';
 import type { ClubBook } from '../types';
 
 function ClubBookTile({
@@ -68,7 +70,6 @@ export default function ClubDetail() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>('books');
   const [showAddBook, setShowAddBook] = useState(false);
-  const [bookSearch, setBookSearch] = useState('');
   const [showSetBook, setShowSetBook] = useState(false);
   const [mbSearch, setMbSearch] = useState('');
 
@@ -88,12 +89,6 @@ export default function ClubDetail() {
     queryKey: ['clubBooks', id],
     queryFn: () => listClubBooks(id!),
     enabled: !!id,
-  });
-
-  const { data: searchResults } = useQuery({
-    queryKey: ['books', 10, 0, { title: bookSearch }],
-    queryFn: () => listBooks({ limit: 10, title: bookSearch || undefined }),
-    enabled: showAddBook,
   });
 
   const isOwner = club?.owner_id === user?.id;
@@ -127,20 +122,6 @@ export default function ClubDetail() {
   const leaveMutation = useMutation({
     mutationFn: () => leaveClub(id!),
     onSuccess: () => { invalidateMembers(); toast.success('Left club'); },
-    onError: (err: unknown) => {
-      const e = err as { response?: { data?: { detail?: string } } };
-      toast.error(e?.response?.data?.detail || 'Error');
-    },
-  });
-
-  const addBookMutation = useMutation({
-    mutationFn: (bookId: string) => addBookToClub(id!, bookId),
-    onSuccess: () => {
-      invalidateClubBooks();
-      toast.success('Book added!');
-      setShowAddBook(false);
-      setBookSearch('');
-    },
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { detail?: string } } };
       toast.error(e?.response?.data?.detail || 'Error');
@@ -373,14 +354,21 @@ export default function ClubDetail() {
               className="card p-4 flex items-center justify-between gap-4 flex-wrap"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-bb-surface border border-bb-border flex items-center justify-center text-bb-muted text-[10px] font-bold shrink-0">
-                  {member.user_id.slice(0, 2).toUpperCase()}
+                <div className="w-8 h-8 rounded-full overflow-hidden bg-bb-surface border border-bb-border flex items-center justify-center text-bb-muted text-[10px] font-bold shrink-0">
+                  {avatarSrc(member.user_avatar_url) ? (
+                    <img
+                      src={avatarSrc(member.user_avatar_url)!}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    (member.user_name ?? '?').charAt(0).toUpperCase()
+                  )}
                 </div>
                 <div className="min-w-0">
                   <p className="text-bb-text text-sm font-medium truncate">
-                    {member.user_id === user?.id
-                      ? user.name + ' (you)'
-                      : member.user_id.slice(0, 12) + '…'}
+                    {member.user_name ?? 'Unknown user'}
+                    {member.user_id === user?.id && ' (you)'}
                     {member.user_id === club.owner_id && (
                       <span className="ml-2 text-bb-dim text-xs">(owner)</span>
                     )}
@@ -482,65 +470,15 @@ export default function ClubDetail() {
 
       {/* Add book modal */}
       {showAddBook && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="card w-full max-w-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-white font-semibold">Add Book to Club</h2>
-              <button
-                onClick={() => {
-                  setShowAddBook(false);
-                  setBookSearch('');
-                }}
-                className="text-bb-muted hover:text-white text-lg leading-none"
-              >
-                ×
-              </button>
-            </div>
-            <input
-              className="input mb-4"
-              placeholder="Search books by title..."
-              value={bookSearch}
-              onChange={(e) => setBookSearch(e.target.value)}
-              autoFocus
-            />
-            <div className="space-y-1 max-h-72 overflow-y-auto">
-              {searchResults?.items.map((book) => {
-                const inClub = clubBooksData?.items.some(
-                  (cb) => cb.book_id === book.id
-                );
-                return (
-                  <div
-                    key={book.id}
-                    className="flex items-center justify-between gap-3 p-3 rounded hover:bg-bb-surface transition-colors"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-bb-text text-sm font-medium truncate">
-                        {book.title}
-                      </p>
-                      <p className="text-bb-muted text-xs">{book.author}</p>
-                    </div>
-                    <button
-                      onClick={() => addBookMutation.mutate(book.id)}
-                      disabled={inClub || addBookMutation.isPending}
-                      className={
-                        inClub
-                          ? 'text-bb-dim text-xs shrink-0'
-                          : 'btn-primary text-xs py-1 px-2 shrink-0'
-                      }
-                    >
-                      {inClub ? 'Added' : '+ Add'}
-                    </button>
-                  </div>
-                );
-              })}
-              {searchResults?.items.length === 0 && (
-                <p className="text-bb-muted text-sm text-center py-6">
-                  No books found
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
+        <AddBookModal
+          heading="Add Book to Club"
+          pickLabel="Add to club"
+          onClose={() => setShowAddBook(false)}
+          onPicked={async (book) => {
+            await addBookToClub(id!, book.id);
+            invalidateClubBooks();
+          }}
+        />
       )}
 
       {/* Set monthly book modal */}

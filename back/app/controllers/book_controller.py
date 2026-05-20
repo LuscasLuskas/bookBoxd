@@ -4,8 +4,14 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.book import BookCreate, BookListResponse, BookResponse
+from app.schemas.book import (
+    BookCreate,
+    BookListResponse,
+    BookResponse,
+    ExternalSearchResponse,
+)
 from app.services.book_service import BookService
+from app.services.open_library_service import OpenLibraryService
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -37,6 +43,17 @@ def list_books(
     service = BookService(db)
     items, total = service.list_books(limit=limit, offset=offset, title=title, author=author)
     return BookListResponse(items=items, total=total, limit=limit, offset=offset)
+
+
+@router.get("/search-external", response_model=ExternalSearchResponse)
+def search_external_books(
+    q: str = Query(..., min_length=1, description="Termo de busca na Open Library"),
+    limit: int = Query(20, ge=1, le=40),
+    current_user: User = Depends(get_current_user),
+):
+    """Busca livros na Open Library (não persiste nada no catálogo)."""
+    results = OpenLibraryService().search(q, limit=limit)
+    return ExternalSearchResponse(items=results)
 
 
 @router.get("/{book_id}", response_model=BookResponse)

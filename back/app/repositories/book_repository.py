@@ -11,6 +11,9 @@ class BookRepository:
     def get_by_id(self, book_id: str) -> Book | None:
         return self.db.query(Book).filter(Book.id == book_id).first()
 
+    def get_by_external_id(self, external_id: str) -> Book | None:
+        return self.db.query(Book).filter(Book.external_id == external_id).first()
+
     def list(
         self,
         limit: int = 20,

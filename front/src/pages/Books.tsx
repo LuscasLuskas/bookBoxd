@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
-import { listBooks, createBook } from '../api/books';
+import { useQuery } from '@tanstack/react-query';
+import { listBooks } from '../api/books';
 import BookCard from '../components/BookCard';
+import AddBookModal from '../components/AddBookModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const LIMIT = 20;
 
 export default function Books() {
-  const qc = useQueryClient();
   const [search, setSearch] = useState({ title: '', author: '' });
   const [debounced, setDebounced] = useState({ title: '', author: '' });
   const [offset, setOffset] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ title: '', author: '', synopsis: '' });
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 400);
@@ -31,33 +29,9 @@ export default function Books() {
       }),
   });
 
-  const createMutation = useMutation({
-    mutationFn: createBook,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['books'] });
-      toast.success('Book added to catalog!');
-      setShowCreate(false);
-      setForm({ title: '', author: '', synopsis: '' });
-    },
-    onError: (err: unknown) => {
-      const e = err as { response?: { data?: { detail?: string } } };
-      toast.error(e?.response?.data?.detail || 'Failed to add book');
-    },
-  });
-
   const handleSearchChange = (field: 'title' | 'author', value: string) => {
     setSearch((prev) => ({ ...prev, [field]: value }));
     setOffset(0);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.title.trim() || !form.author.trim()) return;
-    createMutation.mutate({
-      title: form.title.trim(),
-      author: form.author.trim(),
-      synopsis: form.synopsis.trim() || undefined,
-    });
   };
 
   const totalPages = data ? Math.ceil(data.total / LIMIT) : 0;
@@ -144,71 +118,7 @@ export default function Books() {
         </>
       )}
 
-      {/* Create modal */}
-      {showCreate && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="card w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-white font-semibold text-lg">Add Book</h2>
-              <button
-                onClick={() => setShowCreate(false)}
-                className="text-bb-muted hover:text-white transition-colors text-lg leading-none"
-              >
-                ×
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="label">Title *</label>
-                <input
-                  className="input"
-                  value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="Book title"
-                  required
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="label">Author *</label>
-                <input
-                  className="input"
-                  value={form.author}
-                  onChange={(e) => setForm((f) => ({ ...f, author: e.target.value }))}
-                  placeholder="Author name"
-                  required
-                />
-              </div>
-              <div>
-                <label className="label">Synopsis</label>
-                <textarea
-                  className="textarea"
-                  rows={4}
-                  value={form.synopsis}
-                  onChange={(e) => setForm((f) => ({ ...f, synopsis: e.target.value }))}
-                  placeholder="Brief description (optional)"
-                />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="btn-primary flex-1"
-                >
-                  {createMutation.isPending ? 'Adding...' : 'Add Book'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreate(false)}
-                  className="btn-ghost"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {showCreate && <AddBookModal onClose={() => setShowCreate(false)} />}
     </div>
   );
 }

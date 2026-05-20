@@ -7,6 +7,7 @@ from app.models.book import Book
 from app.models.user import User
 from app.repositories.book_repository import BookRepository
 from app.schemas.book import BookCreate
+from app.services.open_library_service import OpenLibraryService
 
 
 class BookService:
@@ -15,11 +16,26 @@ class BookService:
         self.repo = BookRepository(db)
 
     def create(self, data: BookCreate, current_user: User) -> Book:
+        # Imports from Open Library are idempotent: if a book with the same
+        # external_id already exists, reuse it instead of duplicating the catalog.
+        if data.external_id:
+            existing = self.repo.get_by_external_id(data.external_id)
+            if existing:
+                return existing
+
+        synopsis = data.synopsis
+        if not synopsis and data.external_id:
+            synopsis = OpenLibraryService().fetch_description(data.external_id)
+
         book = Book(
             id=str(uuid.uuid4()),
-            title=data.title,
-            author=data.author,
-            synopsis=data.synopsis,
+            title=data.title[:500],
+            author=data.author[:255],
+            synopsis=synopsis,
+            cover_url=data.cover_url,
+            external_id=data.external_id,
+            published_year=data.published_year,
+            isbn=data.isbn,
             created_by=current_user.id,
             created_by_name_snapshot=current_user.name,
         )

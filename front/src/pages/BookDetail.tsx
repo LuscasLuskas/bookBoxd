@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -19,6 +20,7 @@ const STATUS_OPTIONS: { value: UserBookStatus; label: string }[] = [
 export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
+  const [coverError, setCoverError] = useState(false);
 
   const { data: book, isLoading } = useQuery({
     queryKey: ['book', id],
@@ -92,15 +94,27 @@ export default function BookDetail() {
       <div className="flex gap-8 flex-col sm:flex-row">
         {/* Cover */}
         <div className="shrink-0 w-40 sm:w-52">
-          <div
-            className="aspect-[2/3] rounded w-full relative overflow-hidden shadow-2xl"
-            style={{ background: getBookGradient(book.title) }}
-          >
-            <div className="absolute left-0 top-0 bottom-0 w-2 bg-black/30" />
-            <div className="absolute inset-0 flex flex-col justify-end p-4 bg-gradient-to-t from-black/70 via-transparent to-transparent">
-              <p className="text-white text-sm font-bold leading-tight">{book.title}</p>
-              <p className="text-white/50 text-xs mt-1">{book.author}</p>
-            </div>
+          <div className="aspect-[2/3] rounded w-full relative overflow-hidden shadow-2xl">
+            {book.cover_url && !coverError ? (
+              <img
+                src={book.cover_url}
+                alt={book.title}
+                onError={() => setCoverError(true)}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : (
+              <>
+                <div
+                  className="absolute inset-0"
+                  style={{ background: getBookGradient(book.title) }}
+                />
+                <div className="absolute left-0 top-0 bottom-0 w-2 bg-black/30" />
+                <div className="absolute inset-0 flex flex-col justify-end p-4 bg-gradient-to-t from-black/70 via-transparent to-transparent">
+                  <p className="text-white text-sm font-bold leading-tight">{book.title}</p>
+                  <p className="text-white/50 text-xs mt-1">{book.author}</p>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -108,6 +122,13 @@ export default function BookDetail() {
         <div className="flex-1 min-w-0">
           <h1 className="text-3xl font-bold text-white leading-tight">{book.title}</h1>
           <p className="text-bb-accent text-lg mt-1 font-medium">{book.author}</p>
+
+          {(book.published_year || book.isbn) && (
+            <p className="text-bb-muted text-sm mt-2 flex gap-3 flex-wrap">
+              {book.published_year && <span>First published {book.published_year}</span>}
+              {book.isbn && <span>ISBN {book.isbn}</span>}
+            </p>
+          )}
 
           {book.synopsis && (
             <p className="text-bb-muted mt-4 leading-relaxed text-sm max-w-prose">
