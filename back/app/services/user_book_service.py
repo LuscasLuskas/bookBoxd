@@ -69,3 +69,14 @@ class UserBookService:
             offset=offset,
             status=status_filter,
         )
+
+    def get_stats(self, current_user: User) -> dict[str, int]:
+        counts = self.repo.count_by_status(current_user.id)
+        return {
+            "wishlist": counts.get(UserBookStatus.WISHLIST, 0),
+            "added": counts.get(UserBookStatus.ADDED, 0),
+            "reading": counts.get(UserBookStatus.READING, 0),
+            "completed": counts.get(UserBookStatus.COMPLETED, 0),
+            "dropped": counts.get(UserBookStatus.DROPPED, 0),
+            "total": sum(counts.values()),
+        }

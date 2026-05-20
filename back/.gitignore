@@ -32,3 +32,6 @@ alembic/versions/*.pyc
 
 # Docker
 *.log
+
+# Uploaded files (profile photos)
+uploads/

@@ -51,3 +51,11 @@ class Membership(Base):
     club: Mapped["BookClub"] = relationship(  # type: ignore[name-defined]
         "BookClub", back_populates="memberships", foreign_keys=[club_id]
     )
+
+    @property
+    def user_name(self) -> str | None:
+        return self.user.name if self.user else None
+
+    @property
+    def user_avatar_url(self) -> str | None:
+        return self.user.avatar_url if self.user else None

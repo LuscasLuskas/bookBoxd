@@ -30,3 +30,14 @@ class UserBookListResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class UserBookStatsResponse(BaseModel):
+    """Reading stats: how many library books the user has in each status."""
+
+    wishlist: int = 0
+    added: int = 0
+    reading: int = 0
+    completed: int = 0
+    dropped: int = 0
+    total: int = 0

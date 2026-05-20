@@ -1,7 +1,10 @@
+import os
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -46,6 +49,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 def health():
     return {"status": "ok"}
 
+
+# Uploaded files (profile photos) — served as static assets.
+os.makedirs("uploads/avatars", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.include_router(auth_controller.router)
 app.include_router(user_controller.router)

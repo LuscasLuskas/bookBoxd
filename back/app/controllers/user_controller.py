@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_master
 from app.models.user import User
-from app.schemas.user import UserDeleteResponse, UserResponse
+from app.schemas.user import UserDeleteResponse, UserResponse, UserUpdate
 from app.services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -14,6 +14,34 @@ router = APIRouter(prefix="/users", tags=["users"])
 def get_me(current_user: User = Depends(get_current_user)):
     """Retorna o perfil do usuário autenticado."""
     return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+def update_me(
+    body: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Atualiza nome, bio e livro favorito do usuário autenticado."""
+    service = UserService(db)
+    user = service.update_profile(current_user, body)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.post("/me/avatar", response_model=UserResponse)
+def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Faz upload da foto de perfil do usuário autenticado."""
+    service = UserService(db)
+    user = service.update_avatar(current_user, file)
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @router.delete("/me", response_model=UserDeleteResponse, status_code=200)

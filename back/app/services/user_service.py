@@ -1,4 +1,7 @@
-from fastapi import HTTPException, status
+import os
+import uuid
+
+from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.models.user import Role, User
@@ -7,6 +10,16 @@ from app.repositories.book_repository import BookRepository
 from app.repositories.membership_repository import MembershipRepository
 from app.repositories.user_book_repository import UserBookRepository
 from app.repositories.user_repository import UserRepository
+from app.schemas.user import UserUpdate
+
+AVATAR_DIR = "uploads/avatars"
+MAX_AVATAR_BYTES = 5 * 1024 * 1024
+ALLOWED_AVATAR_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
 
 
 class UserService:
@@ -20,6 +33,57 @@ class UserService:
 
     def get_profile(self, user: User) -> User:
         return user
+
+    def update_profile(self, user: User, data: UserUpdate) -> User:
+        fields = data.model_dump(exclude_unset=True)
+
+        if "name" in fields and fields["name"]:
+            user.name = fields["name"].strip()
+
+        if "bio" in fields:
+            bio = fields["bio"]
+            user.bio = bio.strip() if bio and bio.strip() else None
+
+        if "favorite_book_id" in fields:
+            book_id = fields["favorite_book_id"]
+            if book_id and not self.book_repo.get_by_id(book_id):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Livro favorito não encontrado",
+                )
+            user.favorite_book_id = book_id
+
+        return self.user_repo.save(user)
+
+    def update_avatar(self, user: User, file: UploadFile) -> User:
+        ext = ALLOWED_AVATAR_TYPES.get(file.content_type or "")
+        if not ext:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Formato inválido. Use JPG, PNG, WEBP ou GIF.",
+            )
+
+        contents = file.file.read()
+        if len(contents) > MAX_AVATAR_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Imagem muito grande (máximo 5MB).",
+            )
+
+        os.makedirs(AVATAR_DIR, exist_ok=True)
+        filename = f"{user.id}_{uuid.uuid4().hex[:8]}{ext}"
+        with open(os.path.join(AVATAR_DIR, filename), "wb") as out:
+            out.write(contents)
+
+        previous = user.avatar_url
+        user.avatar_url = f"/uploads/avatars/{filename}"
+        if previous and previous.startswith("/uploads/avatars/"):
+            try:
+                os.remove(previous.lstrip("/"))
+            except OSError:
+                pass
+
+        return self.user_repo.save(user)
 
     def delete_account(self, user: User, actor: User) -> None:
         if actor.role != Role.MASTER and actor.id != user.id:

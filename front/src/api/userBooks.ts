@@ -1,5 +1,10 @@
 import api from './client';
-import type { UserBook, UserBookListResponse, UserBookStatus } from '../types';
+import type {
+  LibraryStats,
+  UserBook,
+  UserBookListResponse,
+  UserBookStatus,
+} from '../types';
 
 export const listLibrary = async (params?: {
   limit?: number;
@@ -7,6 +12,12 @@ export const listLibrary = async (params?: {
   status?: UserBookStatus;
 }): Promise<UserBookListResponse> => {
   const res = await api.get<UserBookListResponse>('/me/books', { params });
+  return res.data;
+};
+
+/** Reading-stats counts per status — accurate regardless of library size. */
+export const getLibraryStats = async (): Promise<LibraryStats> => {
+  const res = await api.get<LibraryStats>('/me/books/stats');
   return res.data;
 };
 

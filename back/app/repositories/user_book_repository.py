@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.user_book import UserBook, UserBookStatus
@@ -27,6 +28,15 @@ class UserBookRepository:
         total = query.count()
         items = query.order_by(UserBook.created_at.desc()).offset(offset).limit(limit).all()
         return items, total
+
+    def count_by_status(self, user_id: str) -> dict[UserBookStatus, int]:
+        rows = (
+            self.db.query(UserBook.status, func.count(UserBook.id))
+            .filter(UserBook.user_id == user_id)
+            .group_by(UserBook.status)
+            .all()
+        )
+        return {status: count for status, count in rows}
 
     def create(self, user_book: UserBook) -> UserBook:
         self.db.add(user_book)

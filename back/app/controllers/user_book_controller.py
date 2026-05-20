@@ -5,7 +5,13 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.models.user_book import UserBookStatus
-from app.schemas.user_book import UserBookAdd, UserBookListResponse, UserBookResponse, UserBookUpdate
+from app.schemas.user_book import (
+    UserBookAdd,
+    UserBookListResponse,
+    UserBookResponse,
+    UserBookStatsResponse,
+    UserBookUpdate,
+)
 from app.services.user_book_service import UserBookService
 
 router = APIRouter(prefix="/me/books", tags=["user-books"])
@@ -39,6 +45,16 @@ def list_library(
         current_user=current_user, limit=limit, offset=offset, status_filter=status
     )
     return UserBookListResponse(items=items, total=total, limit=limit, offset=offset)
+
+
+@router.get("/stats", response_model=UserBookStatsResponse)
+def library_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Retorna a contagem de livros da biblioteca por status de leitura."""
+    service = UserBookService(db)
+    return service.get_stats(current_user)
 
 
 @router.patch("/{book_id}", response_model=UserBookResponse)

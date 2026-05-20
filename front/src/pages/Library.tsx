@@ -2,10 +2,16 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { listLibrary, updateBookStatus, removeFromLibrary } from '../api/userBooks';
+import {
+  listLibrary,
+  addToLibrary,
+  updateBookStatus,
+  removeFromLibrary,
+} from '../api/userBooks';
 import { getBook } from '../api/books';
 import { UserBookBadge } from '../components/StatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
+import AddBookModal from '../components/AddBookModal';
 import { getBookGradient } from '../utils/bookCover';
 import type { UserBook, UserBookStatus } from '../types';
 
@@ -51,16 +57,29 @@ function LibraryRow({ userBook }: { userBook: UserBook }) {
     },
   });
 
+  const [imgError, setImgError] = useState(false);
   const title = book?.title ?? '...';
-  const gradient = getBookGradient(title);
+  const hasCover = !!book?.cover_url && !imgError;
 
   return (
     <div className="card p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
       <Link to={`/books/${userBook.book_id}`} className="shrink-0 w-10 sm:w-12">
-        <div
-          className="aspect-[2/3] rounded-sm w-full"
-          style={{ background: gradient }}
-        />
+        <div className="aspect-[2/3] rounded-sm w-full overflow-hidden">
+          {hasCover ? (
+            <img
+              src={book!.cover_url!}
+              alt={title}
+              loading="lazy"
+              onError={() => setImgError(true)}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div
+              className="w-full h-full"
+              style={{ background: getBookGradient(title) }}
+            />
+          )}
+        </div>
       </Link>
       <div className="flex-1 min-w-0">
         <Link
@@ -101,7 +120,9 @@ function LibraryRow({ userBook }: { userBook: UserBook }) {
 }
 
 export default function Library() {
+  const qc = useQueryClient();
   const [filter, setFilter] = useState<UserBookStatus | 'all'>('all');
+  const [showAdd, setShowAdd] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['library', filter],
@@ -121,9 +142,14 @@ export default function Library() {
             <p className="text-bb-muted text-sm mt-0.5">{data.total} books</p>
           )}
         </div>
-        <Link to="/books" className="btn-ghost text-sm">
-          + Browse Books
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link to="/books" className="btn-ghost text-sm">
+            Browse Books
+          </Link>
+          <button onClick={() => setShowAdd(true)} className="btn-primary text-sm">
+            + Add Book
+          </button>
+        </div>
       </div>
 
       {/* Filter tabs */}
@@ -160,6 +186,18 @@ export default function Library() {
             <LibraryRow key={ub.id} userBook={ub} />
           ))}
         </div>
+      )}
+
+      {showAdd && (
+        <AddBookModal
+          heading="Add Book to Library"
+          pickLabel="Add to library"
+          onClose={() => setShowAdd(false)}
+          onPicked={async (book) => {
+            await addToLibrary(book.id);
+            qc.invalidateQueries({ queryKey: ['library'] });
+          }}
+        />
       )}
     </div>
   );

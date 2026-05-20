@@ -3,6 +3,10 @@ export interface User {
   email: string;
   name: string;
   role: 'user' | 'master';
+  avatar_url: string | null;
+  bio: string | null;
+  favorite_book_id: string | null;
+  favorite_book: Book | null;
   created_at: string;
 }
 
@@ -55,6 +59,8 @@ export type MembershipStatus =
 export interface Membership {
   id: string;
   user_id: string;
+  user_name: string | null;
+  user_avatar_url: string | null;
   club_id: string;
   status: MembershipStatus;
   kicked_until: string | null;
@@ -88,6 +94,15 @@ export interface UserBookListResponse {
   total: number;
   limit: number;
   offset: number;
+}
+
+export interface LibraryStats {
+  wishlist: number;
+  added: number;
+  reading: number;
+  completed: number;
+  dropped: number;
+  total: number;
 }
 
 export interface ClubBook {
