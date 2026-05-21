@@ -6,6 +6,7 @@ from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.book import (
     BookCreate,
+    BookDetailResponse,
     BookListResponse,
     BookResponse,
     ExternalSearchResponse,
@@ -27,7 +28,7 @@ def create_book(
     book = service.create(body, current_user)
     db.commit()
     db.refresh(book)
-    return book
+    return service.enrich_books([book])[0]
 
 
 @router.get("", response_model=BookListResponse)
@@ -36,12 +37,15 @@ def list_books(
     offset: int = Query(0, ge=0),
     title: str | None = Query(None),
     author: str | None = Query(None),
+    genre: str | None = Query(None, description="Filtra por nome de gênero"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Lista livros do catálogo global com filtros opcionais."""
     service = BookService(db)
-    items, total = service.list_books(limit=limit, offset=offset, title=title, author=author)
+    items, total = service.list_books(
+        limit=limit, offset=offset, title=title, author=author, genre=genre
+    )
     return BookListResponse(items=items, total=total, limit=limit, offset=offset)
 
 
@@ -56,12 +60,12 @@ def search_external_books(
     return ExternalSearchResponse(items=results)
 
 
-@router.get("/{book_id}", response_model=BookResponse)
+@router.get("/{book_id}", response_model=BookDetailResponse)
 def get_book(
     book_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Retorna um livro pelo ID."""
+    """Retorna um livro pelo ID, com avaliação média, gêneros e tags."""
     service = BookService(db)
-    return service.get_by_id(book_id)
+    return service.get_book_detail(book_id)

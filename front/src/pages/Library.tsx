@@ -7,13 +7,17 @@ import {
   addToLibrary,
   updateBookStatus,
   removeFromLibrary,
+  rateBook,
 } from '../api/userBooks';
 import { getBook } from '../api/books';
 import { UserBookBadge } from '../components/StatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AddBookModal from '../components/AddBookModal';
+import StarRating from '../components/StarRating';
 import { getBookGradient } from '../utils/bookCover';
 import type { UserBook, UserBookStatus } from '../types';
+
+const RATEABLE: UserBookStatus[] = ['COMPLETED', 'DROPPED'];
 
 const FILTERS: { value: UserBookStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -57,6 +61,19 @@ function LibraryRow({ userBook }: { userBook: UserBook }) {
     },
   });
 
+  const rateMutation = useMutation({
+    mutationFn: (rating: number | null) => rateBook(userBook.book_id, rating),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['library'] });
+    },
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { detail?: string } } };
+      toast.error(e?.response?.data?.detail || 'Error');
+    },
+  });
+
+  const canRate = RATEABLE.includes(userBook.status);
+
   const [imgError, setImgError] = useState(false);
   const title = book?.title ?? '...';
   const hasCover = !!book?.cover_url && !imgError;
@@ -89,6 +106,19 @@ function LibraryRow({ userBook }: { userBook: UserBook }) {
           {title}
         </Link>
         <p className="text-bb-muted text-xs truncate">{book?.author ?? ''}</p>
+        {canRate && (
+          <div className="mt-1 flex items-center gap-1.5">
+            <StarRating
+              value={userBook.rating}
+              onChange={(r) => rateMutation.mutate(r)}
+              disabled={rateMutation.isPending}
+              size={15}
+            />
+            {userBook.rating == null && (
+              <span className="text-bb-dim text-[11px]">Rate it</span>
+            )}
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <span className="hidden sm:block">

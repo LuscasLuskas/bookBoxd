@@ -7,6 +7,9 @@ from app.models.user_book import UserBook, UserBookStatus
 from app.models.access_log import AccessLog
 from app.models.club_monthly_book import ClubMonthlyBook
 from app.models.reading_register import GoalFrequency, ReadingRegister, ReadingUnit
+from app.models.genre import Genre, BookGenre
+from app.models.tag import Tag, BookTag
+from app.models.shelf import Shelf, ShelfBook
 
 __all__ = [
     "User", "Role",
@@ -18,4 +21,7 @@ __all__ = [
     "AccessLog",
     "ClubMonthlyBook",
     "ReadingRegister", "ReadingUnit", "GoalFrequency",
+    "Genre", "BookGenre",
+    "Tag", "BookTag",
+    "Shelf", "ShelfBook",
 ]

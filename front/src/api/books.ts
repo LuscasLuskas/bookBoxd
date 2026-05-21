@@ -6,6 +6,7 @@ export const listBooks = async (params?: {
   offset?: number;
   title?: string;
   author?: string;
+  genre?: string;
 }): Promise<BookListResponse> => {
   const res = await api.get<BookListResponse>('/books', { params });
   return res.data;

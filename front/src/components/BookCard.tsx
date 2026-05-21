@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getBookGradient } from '../utils/bookCover';
+import StarRating from './StarRating';
 import type { Book } from '../types';
 
 interface Props {
@@ -51,6 +52,14 @@ export default function BookCard({ book, compact = false }: Props) {
             {book.title}
           </p>
           <p className="text-bb-muted text-[11px] truncate">{book.author}</p>
+          {book.avg_rating != null && (
+            <div className="flex items-center gap-1 mt-0.5">
+              <StarRating value={book.avg_rating} readOnly size={11} />
+              <span className="text-bb-dim text-[10px]">
+                {book.avg_rating.toFixed(1)} ({book.ratings_count})
+              </span>
+            </div>
+          )}
         </div>
       )}
     </Link>

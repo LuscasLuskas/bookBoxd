@@ -56,6 +56,9 @@ export default function Navbar() {
             <NavLink to="/library" className={navLink}>
               Library
             </NavLink>
+            <NavLink to="/shelves" className={navLink}>
+              Shelves
+            </NavLink>
           </div>
 
           {/* User menu */}

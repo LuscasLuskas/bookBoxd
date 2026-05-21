@@ -9,6 +9,11 @@ from app.models.user_book import UserBook, UserBookStatus
 from app.repositories.book_repository import BookRepository
 from app.repositories.user_book_repository import UserBookRepository
 
+# A book can only be rated once it has been read or abandoned.
+RATEABLE_STATUSES = {UserBookStatus.COMPLETED, UserBookStatus.DROPPED}
+# Valid star values: 0.5–5.0 in half-star steps.
+ALLOWED_RATINGS = {round(0.5 * n, 1) for n in range(1, 11)}
+
 
 class UserBookService:
     def __init__(self, db: Session):
@@ -44,6 +49,34 @@ class UserBookService:
                 detail="Livro não encontrado na sua biblioteca",
             )
         user_book.status = new_status
+        # A rating only makes sense for read/dropped books — drop it otherwise.
+        if new_status not in RATEABLE_STATUSES:
+            user_book.rating = None
+        user_book.updated_at = datetime.now(timezone.utc)
+        return self.repo.save(user_book)
+
+    def set_rating(
+        self, book_id: str, rating: float | None, current_user: User
+    ) -> UserBook:
+        user_book = self.repo.get_by_user_and_book(current_user.id, book_id)
+        if not user_book:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Livro não encontrado na sua biblioteca",
+            )
+        if rating is not None:
+            if user_book.status not in RATEABLE_STATUSES:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Só é possível avaliar livros concluídos ou abandonados",
+                )
+            rating = round(rating, 1)
+            if rating not in ALLOWED_RATINGS:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="A nota deve ser um múltiplo de 0.5 entre 0.5 e 5.0",
+                )
+        user_book.rating = rating
         user_book.updated_at = datetime.now(timezone.utc)
         return self.repo.save(user_book)
 

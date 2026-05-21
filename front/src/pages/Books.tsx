@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { listBooks } from '../api/books';
+import { listGenres } from '../api/genres';
 import BookCard from '../components/BookCard';
 import AddBookModal from '../components/AddBookModal';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -10,6 +11,7 @@ const LIMIT = 20;
 export default function Books() {
   const [search, setSearch] = useState({ title: '', author: '' });
   const [debounced, setDebounced] = useState({ title: '', author: '' });
+  const [genre, setGenre] = useState('');
   const [offset, setOffset] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
 
@@ -18,14 +20,20 @@ export default function Books() {
     return () => clearTimeout(t);
   }, [search]);
 
+  const { data: genres } = useQuery({
+    queryKey: ['genres'],
+    queryFn: listGenres,
+  });
+
   const { data, isLoading } = useQuery({
-    queryKey: ['books', LIMIT, offset, debounced],
+    queryKey: ['books', LIMIT, offset, debounced, genre],
     queryFn: () =>
       listBooks({
         limit: LIMIT,
         offset,
         title: debounced.title || undefined,
         author: debounced.author || undefined,
+        genre: genre || undefined,
       }),
   });
 
@@ -55,7 +63,7 @@ export default function Books() {
       </div>
 
       {/* Search */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
         <input
           className="input"
           placeholder="Search by title..."
@@ -68,6 +76,21 @@ export default function Books() {
           value={search.author}
           onChange={(e) => handleSearchChange('author', e.target.value)}
         />
+        <select
+          className="input"
+          value={genre}
+          onChange={(e) => {
+            setGenre(e.target.value);
+            setOffset(0);
+          }}
+        >
+          <option value="">All genres</option>
+          {genres?.map((g) => (
+            <option key={g.id} value={g.name}>
+              {g.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Grid */}

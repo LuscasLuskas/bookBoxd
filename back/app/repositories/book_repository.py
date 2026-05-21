@@ -2,6 +2,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.book import Book
+from app.models.genre import BookGenre, Genre
 
 
 class BookRepository:
@@ -20,12 +21,19 @@ class BookRepository:
         offset: int = 0,
         title: str | None = None,
         author: str | None = None,
+        genre: str | None = None,
     ) -> tuple[list[Book], int]:
         query = self.db.query(Book)
         if title:
             query = query.filter(Book.title.ilike(f"%{title}%"))
         if author:
             query = query.filter(Book.author.ilike(f"%{author}%"))
+        if genre:
+            query = (
+                query.join(BookGenre, BookGenre.book_id == Book.id)
+                .join(Genre, Genre.id == BookGenre.genre_id)
+                .filter(func.lower(Genre.name) == genre.lower())
+            )
         total = query.count()
         items = query.order_by(Book.created_at.desc()).offset(offset).limit(limit).all()
         return items, total

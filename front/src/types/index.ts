@@ -10,6 +10,12 @@ export interface User {
   created_at: string;
 }
 
+export interface BookTag {
+  id: string;
+  name: string;
+  added_by: string | null;
+}
+
 export interface Book {
   id: string;
   title: string;
@@ -22,6 +28,29 @@ export interface Book {
   created_by: string | null;
   created_by_name_snapshot: string | null;
   created_at: string;
+  /** Average of all users' star ratings (null when nobody has rated it). */
+  avg_rating: number | null;
+  ratings_count: number;
+  genres: string[];
+  /** Community tags — only populated on the single-book detail endpoint. */
+  tags?: BookTag[];
+}
+
+export interface Genre {
+  id: string;
+  name: string;
+}
+
+export interface Shelf {
+  id: string;
+  user_id: string;
+  name: string;
+  book_count: number;
+  created_at: string;
+}
+
+export interface ShelfDetail extends Shelf {
+  books: Book[];
 }
 
 export interface ExternalBookResult {
@@ -85,6 +114,8 @@ export interface UserBook {
   user_id: string;
   book_id: string;
   status: UserBookStatus;
+  /** Personal star rating, 0.5–5.0 in half steps. null = unrated. */
+  rating: number | null;
   created_at: string;
   updated_at: string;
 }

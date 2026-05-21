@@ -55,15 +55,43 @@ class OpenLibraryService:
 
     def fetch_description(self, work_key: str) -> str | None:
         """Fetches a work's description (the search endpoint omits it)."""
+        return self.fetch_work_meta(work_key)["description"]
+
+    def fetch_work_meta(self, work_key: str) -> dict:
+        """Fetches a work's description and genre subjects in one request.
+
+        Returns ``{"description": str | None, "subjects": list[str]}``.
+        """
+        empty: dict = {"description": None, "subjects": []}
         if not work_key.startswith("/works/"):
-            return None
+            return empty
         try:
             response = requests.get(f"{OPEN_LIBRARY_BASE_URL}{work_key}.json", timeout=10)
             response.raise_for_status()
         except requests.RequestException:
-            return None
+            return empty
 
-        description = response.json().get("description")
+        data = response.json()
+
+        description = data.get("description")
         if isinstance(description, dict):
             description = description.get("value")
-        return description if isinstance(description, str) else None
+        if not isinstance(description, str):
+            description = None
+
+        # Open Library subjects double as genres. They can be numerous and
+        # noisy, so keep a deduplicated handful of reasonably short ones.
+        subjects: list[str] = []
+        seen: set[str] = set()
+        for raw in data.get("subjects") or []:
+            if not isinstance(raw, str):
+                continue
+            name = raw.strip()
+            key = name.lower()
+            if name and len(name) <= 100 and key not in seen:
+                subjects.append(name)
+                seen.add(key)
+            if len(subjects) >= 8:
+                break
+
+        return {"description": description, "subjects": subjects}

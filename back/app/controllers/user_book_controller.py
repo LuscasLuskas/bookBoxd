@@ -8,6 +8,7 @@ from app.models.user_book import UserBookStatus
 from app.schemas.user_book import (
     UserBookAdd,
     UserBookListResponse,
+    UserBookRating,
     UserBookResponse,
     UserBookStatsResponse,
     UserBookUpdate,
@@ -67,6 +68,21 @@ def update_book_status(
     """Atualiza o status de leitura de um livro na biblioteca pessoal."""
     service = UserBookService(db)
     user_book = service.update_status(book_id, body.status, current_user)
+    db.commit()
+    db.refresh(user_book)
+    return user_book
+
+
+@router.patch("/{book_id}/rating", response_model=UserBookResponse)
+def rate_book(
+    book_id: str,
+    body: UserBookRating,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Define a avaliação em estrelas (0.5–5.0) de um livro; null remove a nota."""
+    service = UserBookService(db)
+    user_book = service.set_rating(book_id, body.rating, current_user)
     db.commit()
     db.refresh(user_book)
     return user_book

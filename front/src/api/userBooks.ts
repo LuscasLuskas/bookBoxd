@@ -37,6 +37,15 @@ export const updateBookStatus = async (
   return res.data;
 };
 
+/** Set the personal star rating (0.5–5.0). Pass null to clear it. */
+export const rateBook = async (
+  bookId: string,
+  rating: number | null
+): Promise<UserBook> => {
+  const res = await api.patch<UserBook>(`/me/books/${bookId}/rating`, { rating });
+  return res.data;
+};
+
 export const removeFromLibrary = async (bookId: string): Promise<void> => {
   await api.delete(`/me/books/${bookId}`);
 };

@@ -14,11 +14,18 @@ class UserBookUpdate(BaseModel):
     status: UserBookStatus
 
 
+class UserBookRating(BaseModel):
+    """Set (or clear, with null) the personal star rating of a library book."""
+
+    rating: float | None
+
+
 class UserBookResponse(BaseModel):
     id: str
     user_id: str
     book_id: str
     status: UserBookStatus
+    rating: float | None = None
     created_at: datetime
     updated_at: datetime
 

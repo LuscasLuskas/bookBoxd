@@ -7,6 +7,8 @@ import Home from './pages/Home';
 import Books from './pages/Books';
 import BookDetail from './pages/BookDetail';
 import Library from './pages/Library';
+import Shelves from './pages/Shelves';
+import ShelfDetail from './pages/ShelfDetail';
 import Clubs from './pages/Clubs';
 import ClubDetail from './pages/ClubDetail';
 import Profile from './pages/Profile';
@@ -65,6 +67,28 @@ function AppRoutes() {
           <Guard>
             <Layout>
               <Library />
+            </Layout>
+          </Guard>
+        }
+      />
+
+      <Route
+        path="/shelves"
+        element={
+          <Guard>
+            <Layout>
+              <Shelves />
+            </Layout>
+          </Guard>
+        }
+      />
+
+      <Route
+        path="/shelves/:id"
+        element={
+          <Guard>
+            <Layout>
+              <ShelfDetail />
             </Layout>
           </Guard>
         }
