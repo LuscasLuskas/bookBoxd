@@ -15,6 +15,7 @@ from app.repositories.book_repository import BookRepository
 from app.repositories.club_monthly_book_repository import ClubMonthlyBookRepository
 from app.repositories.membership_repository import MembershipRepository
 from app.repositories.reading_register_repository import ReadingRegisterRepository
+from app.services.forum_service import ForumService
 from app.schemas.reading_register import (
     MonthlyBookListResponse,
     MonthlyBookResponse,
@@ -93,6 +94,14 @@ class MonthlyBookService:
         if registers:
             self.register_repo.add_all(registers)
 
+        # Auto-open (or repin) a forum thread for this monthly book.
+        ForumService(self.db).on_monthly_book_set(
+            club_id=club_id,
+            book_id=book_id,
+            book_title=book.title,
+            actor=current_user,
+        )
+
         return self._monthly_book_response(monthly_book, len(registers))
 
     def list_monthly_books(
@@ -131,6 +140,9 @@ class MonthlyBookService:
             )
         monthly_book.is_active = False
         self.repo.save(monthly_book)
+        ForumService(self.db).on_monthly_book_cleared(
+            club_id=club_id, book_id=monthly_book.book_id
+        )
 
     def list_registers(
         self, club_id: str, monthly_book_id: str, current_user: User

@@ -2,7 +2,7 @@ import uuid
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, String, UniqueConstraint
+from sqlalchemy import DateTime, Enum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -34,8 +34,6 @@ class UserBook(Base):
     status: Mapped[UserBookStatus] = mapped_column(
         Enum(UserBookStatus), nullable=False, default=UserBookStatus.ADDED
     )
-    # Personal star rating (0.5–5.0, half-star steps). Null = unrated.
-    rating: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

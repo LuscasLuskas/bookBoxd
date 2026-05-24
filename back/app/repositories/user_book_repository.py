@@ -29,27 +29,6 @@ class UserBookRepository:
         items = query.order_by(UserBook.created_at.desc()).offset(offset).limit(limit).all()
         return items, total
 
-    def rating_stats_for_books(
-        self, book_ids: list[str]
-    ) -> dict[str, tuple[float, int]]:
-        """Maps each book id to (average rating, number of ratings).
-
-        Books with no ratings are simply absent from the result.
-        """
-        if not book_ids:
-            return {}
-        rows = (
-            self.db.query(
-                UserBook.book_id,
-                func.avg(UserBook.rating),
-                func.count(UserBook.rating),
-            )
-            .filter(UserBook.book_id.in_(book_ids), UserBook.rating.isnot(None))
-            .group_by(UserBook.book_id)
-            .all()
-        )
-        return {book_id: (float(avg), int(count)) for book_id, avg, count in rows}
-
     def count_by_status(self, user_id: str) -> dict[UserBookStatus, int]:
         rows = (
             self.db.query(UserBook.status, func.count(UserBook.id))

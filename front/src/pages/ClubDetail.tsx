@@ -237,6 +237,11 @@ export default function ClubDetail() {
           </div>
 
           <div className="flex gap-2 flex-wrap shrink-0">
+            {isMember && (
+              <Link to={`/clubs/${id}/forum`} className="btn-ghost">
+                Open Forum
+              </Link>
+            )}
             {!isOwner && (
               <>
                 {!myMembership && (

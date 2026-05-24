@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -8,13 +8,20 @@ import {
   addToLibrary,
   updateBookStatus,
   removeFromLibrary,
-  rateBook,
 } from '../api/userBooks';
+import {
+  deleteMyReview,
+  getMyReview,
+  listBookReviews,
+  toggleReviewLike,
+  upsertReview,
+} from '../api/reviews';
 import { addTag, removeTag } from '../api/tags';
 import { listShelves, addBookToShelf } from '../api/shelves';
 import { UserBookBadge } from '../components/StatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
 import StarRating from '../components/StarRating';
+import ReviewCard from '../components/ReviewCard';
 import { getBookGradient } from '../utils/bookCover';
 import { useAuth } from '../contexts/AuthContext';
 import type { UserBookStatus } from '../types';
@@ -39,6 +46,15 @@ export default function BookDetail() {
   const [coverError, setCoverError] = useState(false);
   const [tagInput, setTagInput] = useState('');
 
+  // Local review-draft state — synced from server when "my review" loads.
+  const [reviewRating, setReviewRating] = useState<number | null>(null);
+  const [reviewBody, setReviewBody] = useState('');
+  const [reviewIsPublic, setReviewIsPublic] = useState(true);
+  // Display-vs-edit toggle: with a saved review, we show it as a card by
+  // default and only swap to the form when the user clicks Edit (or has no
+  // saved review yet).
+  const [editingReview, setEditingReview] = useState(false);
+
   const { data: book, isLoading } = useQuery({
     queryKey: ['book', id],
     queryFn: () => getBook(id!),
@@ -55,11 +71,42 @@ export default function BookDetail() {
     queryFn: listShelves,
   });
 
-  const userBook = library?.items.find((ub) => ub.book_id === id);
+  const { data: myReview } = useQuery({
+    queryKey: ['myReview', id],
+    queryFn: () => getMyReview(id!),
+    enabled: !!id,
+  });
 
-  const invalidateBook = () => {
+  const { data: reviews } = useQuery({
+    queryKey: ['reviews', id],
+    queryFn: () => listBookReviews(id!),
+    enabled: !!id,
+  });
+
+  // Seed the draft from the saved review whenever it (re)loads, and snap
+  // back to display mode so the editor doesn't sit there with stale text.
+  useEffect(() => {
+    if (myReview) {
+      setReviewRating(myReview.rating);
+      setReviewBody(myReview.body ?? '');
+      setReviewIsPublic(myReview.is_public);
+    } else {
+      setReviewRating(null);
+      setReviewBody('');
+      setReviewIsPublic(true);
+    }
+    setEditingReview(false);
+  }, [myReview]);
+
+  const userBook = library?.items.find((ub) => ub.book_id === id);
+  const canReview =
+    userBook?.status === 'COMPLETED' || userBook?.status === 'DROPPED';
+
+  const invalidateBookViews = () => {
     qc.invalidateQueries({ queryKey: ['library'] });
     qc.invalidateQueries({ queryKey: ['book', id] });
+    qc.invalidateQueries({ queryKey: ['myReview', id] });
+    qc.invalidateQueries({ queryKey: ['reviews', id] });
   };
 
   const addMutation = useMutation({
@@ -89,9 +136,33 @@ export default function BookDetail() {
     onError: (err) => toast.error(errMessage(err)),
   });
 
-  const rateMutation = useMutation({
-    mutationFn: (rating: number | null) => rateBook(id!, rating),
-    onSuccess: invalidateBook,
+  const saveReviewMutation = useMutation({
+    mutationFn: () =>
+      upsertReview({
+        book_id: id!,
+        rating: reviewRating!,
+        body: reviewBody.trim() || null,
+        is_public: reviewIsPublic,
+      }),
+    onSuccess: () => {
+      invalidateBookViews();
+      toast.success('Review saved!');
+    },
+    onError: (err) => toast.error(errMessage(err)),
+  });
+
+  const deleteReviewMutation = useMutation({
+    mutationFn: () => deleteMyReview(id!),
+    onSuccess: () => {
+      invalidateBookViews();
+      toast.success('Review removed');
+    },
+    onError: (err) => toast.error(errMessage(err)),
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: (reviewId: string) => toggleReviewLike(reviewId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['reviews', id] }),
     onError: (err) => toast.error(errMessage(err)),
   });
 
@@ -190,11 +261,11 @@ export default function BookDetail() {
               </span>
               <span className="text-bb-dim text-xs">
                 ({book.ratings_count}{' '}
-                {book.ratings_count === 1 ? 'rating' : 'ratings'})
+                {book.ratings_count === 1 ? 'review' : 'reviews'})
               </span>
             </div>
           ) : (
-            <p className="text-bb-dim text-xs mt-2">Not rated yet</p>
+            <p className="text-bb-dim text-xs mt-2">No reviews yet</p>
           )}
 
           {(book.published_year || book.isbn) && (
@@ -250,10 +321,10 @@ export default function BookDetail() {
                     disabled={updateMutation.isPending}
                   >
                     {STATUS_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                   <button
                     onClick={() => removeMutation.mutate()}
@@ -263,23 +334,6 @@ export default function BookDetail() {
                     Remove
                   </button>
                 </div>
-                {(userBook.status === 'COMPLETED' ||
-                  userBook.status === 'DROPPED') && (
-                  <div className="flex items-center gap-3 flex-wrap pt-1">
-                    <span className="text-bb-muted text-sm">Your rating:</span>
-                    <StarRating
-                      value={userBook.rating}
-                      onChange={(r) => rateMutation.mutate(r)}
-                      disabled={rateMutation.isPending}
-                      size={24}
-                    />
-                    <span className="text-bb-muted text-sm tabular-nums">
-                      {userBook.rating != null
-                        ? userBook.rating.toFixed(1)
-                        : 'Not rated'}
-                    </span>
-                  </div>
-                )}
               </div>
             ) : (
               <div>
@@ -373,6 +427,143 @@ export default function BookDetail() {
             </form>
           </div>
         </div>
+      </div>
+
+      {/* Your review editor */}
+      <div className="mt-12">
+        <h2 className="text-white text-lg font-semibold mb-3">Your Review</h2>
+        {!userBook ? (
+          <p className="text-bb-dim text-sm">
+            Add this book to your library to review it.
+          </p>
+        ) : !canReview ? (
+          <p className="text-bb-dim text-sm">
+            You can review this book once you mark it Completed or Dropped.
+          </p>
+        ) : myReview && !editingReview ? (
+          // Display mode: show the saved review as a card with Edit/Delete.
+          <div className="card p-4 space-y-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <StarRating value={myReview.rating} readOnly size={22} />
+              <span className="text-bb-muted text-sm tabular-nums">
+                {myReview.rating != null ? myReview.rating.toFixed(1) : '—'}
+              </span>
+              <span className="text-bb-dim text-xs">
+                {myReview.is_public ? 'Public' : 'Private'}
+              </span>
+              {myReview.is_edited && (
+                <span className="text-bb-dim text-xs italic">(edited)</span>
+              )}
+            </div>
+            {myReview.body ? (
+              <p className="text-bb-muted text-sm whitespace-pre-wrap leading-relaxed">
+                {myReview.body}
+              </p>
+            ) : (
+              <p className="text-bb-dim text-xs italic">
+                (No text — just a rating.)
+              </p>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  if (window.confirm('Delete your review?'))
+                    deleteReviewMutation.mutate();
+                }}
+                disabled={deleteReviewMutation.isPending}
+                className="btn-danger text-xs"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => setEditingReview(true)}
+                className="btn-ghost text-xs"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+        ) : (
+          // Edit mode (no saved review, or user clicked Edit).
+          <div className="card p-4 space-y-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-bb-muted text-sm">Rating:</span>
+              <StarRating
+                value={reviewRating}
+                onChange={(r) => setReviewRating(r)}
+                size={26}
+              />
+              <span className="text-bb-muted text-sm tabular-nums">
+                {reviewRating != null ? reviewRating.toFixed(1) : '—'}
+              </span>
+            </div>
+            <textarea
+              className="input text-sm w-full min-h-24"
+              placeholder="Share your thoughts (optional)…"
+              maxLength={5000}
+              value={reviewBody}
+              onChange={(e) => setReviewBody(e.target.value)}
+            />
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <label className="inline-flex items-center gap-2 text-bb-muted text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={reviewIsPublic}
+                  onChange={(e) => setReviewIsPublic(e.target.checked)}
+                />
+                Show this review publicly on the book page
+              </label>
+              <div className="flex gap-2">
+                {myReview && (
+                  <button
+                    onClick={() => {
+                      // Cancel: discard draft and snap back to display mode.
+                      setReviewRating(myReview.rating);
+                      setReviewBody(myReview.body ?? '');
+                      setReviewIsPublic(myReview.is_public);
+                      setEditingReview(false);
+                    }}
+                    className="btn-ghost text-xs"
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  onClick={() => saveReviewMutation.mutate()}
+                  disabled={
+                    reviewRating == null || saveReviewMutation.isPending
+                  }
+                  className="btn-primary text-xs"
+                >
+                  {myReview ? 'Update review' : 'Post review'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Community reviews */}
+      <div className="mt-10">
+        <h2 className="text-white text-lg font-semibold mb-3">
+          Reviews{reviews && reviews.total > 0 && ` (${reviews.total})`}
+        </h2>
+        {reviews && reviews.items.length > 0 ? (
+          <div className="space-y-3">
+            {reviews.items.map((r) => (
+              <ReviewCard
+                key={r.id}
+                review={r}
+                onLike={() => likeMutation.mutate(r.id)}
+                liking={likeMutation.isPending}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="text-bb-dim text-sm">
+            No public reviews yet. Be the first!
+          </p>
+        )}
       </div>
     </div>
   );

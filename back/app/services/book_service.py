@@ -8,7 +8,7 @@ from app.models.user import User
 from app.repositories.book_repository import BookRepository
 from app.repositories.genre_repository import GenreRepository
 from app.repositories.tag_repository import TagRepository
-from app.repositories.user_book_repository import UserBookRepository
+from app.repositories.review_repository import ReviewRepository
 from app.schemas.book import BookCreate, BookDetailResponse, BookResponse
 from app.schemas.tag import TagResponse
 from app.services.genre_service import GenreService
@@ -108,4 +108,4 @@ class BookService:
         return responses
 
     def _rating_stats(self, book_ids: list[str]) -> dict[str, tuple[float, int]]:
-        return UserBookRepository(self.db).rating_stats_for_books(book_ids)
+        return ReviewRepository(self.db).rating_stats_for_books(book_ids)

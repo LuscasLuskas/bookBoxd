@@ -10,6 +10,10 @@ from app.models.reading_register import GoalFrequency, ReadingRegister, ReadingU
 from app.models.genre import Genre, BookGenre
 from app.models.tag import Tag, BookTag
 from app.models.shelf import Shelf, ShelfBook
+from app.models.review import Review
+from app.models.review_like import ReviewLike
+from app.models.forum_thread import ForumThread
+from app.models.forum_post import ForumPost
 
 __all__ = [
     "User", "Role",
@@ -24,4 +28,6 @@ __all__ = [
     "Genre", "BookGenre",
     "Tag", "BookTag",
     "Shelf", "ShelfBook",
+    "Review", "ReviewLike",
+    "ForumThread", "ForumPost",
 ]

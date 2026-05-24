@@ -114,10 +114,77 @@ export interface UserBook {
   user_id: string;
   book_id: string;
   status: UserBookStatus;
-  /** Personal star rating, 0.5–5.0 in half steps. null = unrated. */
+  /** Caller's review rating, 0.5–5.0 in half steps. null = unreviewed. */
   rating: number | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface Review {
+  id: string;
+  /** Null when the review was soft-deleted (excluded). */
+  user_id: string | null;
+  user_name: string | null;
+  user_avatar_url: string | null;
+  book_id: string;
+  /** Null when the review was soft-deleted. */
+  rating: number | null;
+  body: string | null;
+  is_public: boolean;
+  is_deleted: boolean;
+  is_edited: boolean;
+  likes_count: number;
+  liked_by_me: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReviewListResponse {
+  items: Review[];
+  total: number;
+}
+
+export interface ReviewLikeResult {
+  review_id: string;
+  liked: boolean;
+  likes_count: number;
+}
+
+export interface ForumThread {
+  id: string;
+  club_id: string;
+  book_id: string | null;
+  book_title: string | null;
+  book_cover_url: string | null;
+  title: string;
+  is_pinned: boolean;
+  auto_created: boolean;
+  created_by: string | null;
+  created_by_name: string | null;
+  posts_count: number;
+  created_at: string;
+}
+
+export interface ForumPost {
+  id: string;
+  thread_id: string;
+  /** Null when the post was soft-deleted (excluded). */
+  user_id: string | null;
+  user_name: string | null;
+  user_avatar_url: string | null;
+  body: string;
+  is_deleted: boolean;
+  is_edited: boolean;
+  created_at: string;
+}
+
+export interface ForumThreadDetail extends ForumThread {
+  posts: ForumPost[];
+}
+
+export interface ForumThreadListResponse {
+  items: ForumThread[];
+  total: number;
 }
 
 export interface UserBookListResponse {

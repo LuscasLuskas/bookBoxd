@@ -7,7 +7,6 @@ import {
   addToLibrary,
   updateBookStatus,
   removeFromLibrary,
-  rateBook,
 } from '../api/userBooks';
 import { getBook } from '../api/books';
 import { UserBookBadge } from '../components/StatusBadge';
@@ -61,18 +60,7 @@ function LibraryRow({ userBook }: { userBook: UserBook }) {
     },
   });
 
-  const rateMutation = useMutation({
-    mutationFn: (rating: number | null) => rateBook(userBook.book_id, rating),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['library'] });
-    },
-    onError: (err: unknown) => {
-      const e = err as { response?: { data?: { detail?: string } } };
-      toast.error(e?.response?.data?.detail || 'Error');
-    },
-  });
-
-  const canRate = RATEABLE.includes(userBook.status);
+  const canReview = RATEABLE.includes(userBook.status);
 
   const [imgError, setImgError] = useState(false);
   const title = book?.title ?? '...';
@@ -106,17 +94,15 @@ function LibraryRow({ userBook }: { userBook: UserBook }) {
           {title}
         </Link>
         <p className="text-bb-muted text-xs truncate">{book?.author ?? ''}</p>
-        {canRate && (
+        {canReview && (
           <div className="mt-1 flex items-center gap-1.5">
-            <StarRating
-              value={userBook.rating}
-              onChange={(r) => rateMutation.mutate(r)}
-              disabled={rateMutation.isPending}
-              size={15}
-            />
-            {userBook.rating == null && (
-              <span className="text-bb-dim text-[11px]">Rate it</span>
-            )}
+            <StarRating value={userBook.rating} readOnly size={15} />
+            <Link
+              to={`/books/${userBook.book_id}`}
+              className="text-bb-dim text-[11px] hover:text-bb-accent"
+            >
+              {userBook.rating == null ? 'Review it' : 'Edit review'}
+            </Link>
           </div>
         )}
       </div>

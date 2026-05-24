@@ -11,6 +11,7 @@ import Shelves from './pages/Shelves';
 import ShelfDetail from './pages/ShelfDetail';
 import Clubs from './pages/Clubs';
 import ClubDetail from './pages/ClubDetail';
+import ClubForum from './pages/ClubForum';
 import Profile from './pages/Profile';
 
 function Guard({ children }: { children: ReactNode }) {
@@ -111,6 +112,17 @@ function AppRoutes() {
           <Guard>
             <Layout>
               <ClubDetail />
+            </Layout>
+          </Guard>
+        }
+      />
+
+      <Route
+        path="/clubs/:id/forum"
+        element={
+          <Guard>
+            <Layout>
+              <ClubForum />
             </Layout>
           </Guard>
         }
