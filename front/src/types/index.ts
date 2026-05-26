@@ -10,6 +10,18 @@ export interface User {
   created_at: string;
 }
 
+/** Profile of someone other than the logged-in user — never includes email. */
+export interface PublicUser {
+  id: string;
+  name: string;
+  role: 'USER' | 'MASTER';
+  avatar_url: string | null;
+  bio: string | null;
+  favorite_book_id: string | null;
+  favorite_book: Book | null;
+  created_at: string;
+}
+
 export interface BookTag {
   id: string;
   name: string;
@@ -127,6 +139,9 @@ export interface Review {
   user_name: string | null;
   user_avatar_url: string | null;
   book_id: string;
+  /** Populated when the review is listed on a user's profile (so we can show the book). */
+  book_title?: string | null;
+  book_cover_url?: string | null;
   /** Null when the review was soft-deleted. */
   rating: number | null;
   body: string | null;

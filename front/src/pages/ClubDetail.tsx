@@ -358,7 +358,14 @@ export default function ClubDetail() {
               key={member.id}
               className="card p-4 flex items-center justify-between gap-4 flex-wrap"
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <Link
+                to={
+                  member.user_id === user?.id
+                    ? '/profile'
+                    : `/users/${member.user_id}`
+                }
+                className="flex items-center gap-3 min-w-0 group"
+              >
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-bb-surface border border-bb-border flex items-center justify-center text-bb-muted text-[10px] font-bold shrink-0">
                   {avatarSrc(member.user_avatar_url) ? (
                     <img
@@ -371,7 +378,7 @@ export default function ClubDetail() {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-bb-text text-sm font-medium truncate">
+                  <p className="text-bb-text text-sm font-medium truncate group-hover:text-white transition-colors">
                     {member.user_name ?? 'Unknown user'}
                     {member.user_id === user?.id && ' (you)'}
                     {member.user_id === club.owner_id && (
@@ -379,7 +386,7 @@ export default function ClubDetail() {
                     )}
                   </p>
                 </div>
-              </div>
+              </Link>
               <div className="flex items-center gap-2 shrink-0 flex-wrap">
                 <MembershipBadge status={member.status} />
                 {isOwner &&

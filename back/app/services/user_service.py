@@ -34,6 +34,12 @@ class UserService:
     def get_profile(self, user: User) -> User:
         return user
 
+    def get_public_profile(self, viewer: User, target_id: str) -> User:
+        """Profile of another user, gated by the shared-club access rule."""
+        from app.core.access import assert_can_view_user
+
+        return assert_can_view_user(self.db, viewer, target_id)
+
     def update_profile(self, user: User, data: UserUpdate) -> User:
         fields = data.model_dump(exclude_unset=True)
 

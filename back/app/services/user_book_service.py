@@ -106,6 +106,50 @@ class UserBookService:
 
     def get_stats(self, current_user: User) -> dict[str, int]:
         counts = self.repo.count_by_status(current_user.id)
+        return self._stats_dict(counts)
+
+    def list_books_for_user(
+        self,
+        viewer: User,
+        target_id: str,
+        limit: int = 100,
+        offset: int = 0,
+        status_filter: UserBookStatus | None = None,
+    ) -> tuple[list[UserBookResponse], int]:
+        """Library of another user, gated by the shared-club access rule."""
+        from app.core.access import assert_can_view_user
+
+        assert_can_view_user(self.db, viewer, target_id)
+        items, total = self.repo.list_by_user(
+            user_id=target_id, limit=limit, offset=offset, status=status_filter
+        )
+        # Ratings shown are the target's own (drawn from their reviews),
+        # not the viewer's — same as the owner-view but keyed on target_id.
+        ratings = self.review_repo.ratings_for_user_books(
+            target_id, [ub.book_id for ub in items]
+        )
+        responses = [
+            UserBookResponse(
+                id=ub.id,
+                user_id=ub.user_id,
+                book_id=ub.book_id,
+                status=ub.status,
+                rating=ratings.get(ub.book_id),
+                created_at=ub.created_at,
+                updated_at=ub.updated_at,
+            )
+            for ub in items
+        ]
+        return responses, total
+
+    def get_stats_for_user(self, viewer: User, target_id: str) -> dict[str, int]:
+        from app.core.access import assert_can_view_user
+
+        assert_can_view_user(self.db, viewer, target_id)
+        return self._stats_dict(self.repo.count_by_status(target_id))
+
+    @staticmethod
+    def _stats_dict(counts: dict[UserBookStatus, int]) -> dict[str, int]:
         return {
             "wishlist": counts.get(UserBookStatus.WISHLIST, 0),
             "added": counts.get(UserBookStatus.ADDED, 0),

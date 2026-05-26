@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
@@ -306,25 +307,30 @@ export default function MonthlyBookCard({
         <div className="mt-5 border-t border-bb-border pt-4">
           <p className="text-bb-text text-sm font-medium mb-3">Club progress</p>
           <div className="space-y-2">
-            {board.items.map((r) => (
-              <div key={r.id} className="flex items-center gap-3">
-                <span
-                  className={`text-xs w-32 truncate shrink-0 ${
-                    r.user_id === user?.id
-                      ? 'text-bb-accent font-medium'
-                      : 'text-bb-muted'
-                  }`}
-                >
-                  {r.user_id === user?.id ? 'You' : r.user_name}
-                </span>
-                <div className="flex-1">
-                  <ProgressBar percent={r.progress_percent} />
+            {board.items.map((r) => {
+              const isMe = r.user_id === user?.id;
+              const href = isMe ? '/profile' : `/users/${r.user_id}`;
+              return (
+                <div key={r.id} className="flex items-center gap-3">
+                  <Link
+                    to={href}
+                    className={`text-xs w-32 truncate shrink-0 hover:underline ${
+                      isMe
+                        ? 'text-bb-accent font-medium'
+                        : 'text-bb-muted hover:text-white'
+                    }`}
+                  >
+                    {isMe ? 'You' : r.user_name}
+                  </Link>
+                  <div className="flex-1">
+                    <ProgressBar percent={r.progress_percent} />
+                  </div>
+                  <span className="text-bb-dim text-[11px] w-10 text-right shrink-0">
+                    {r.progress_percent}%
+                  </span>
                 </div>
-                <span className="text-bb-dim text-[11px] w-10 text-right shrink-0">
-                  {r.progress_percent}%
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

@@ -161,24 +161,48 @@ function PostItem({
   const canEdit = isAuthor;
   const canDelete = isAuthor || canModerate;
 
+  const profileHref = post.user_id
+    ? post.user_id === currentUserId
+      ? '/profile'
+      : `/users/${post.user_id}`
+    : null;
+  const avatarBox = (
+    <div className="w-7 h-7 rounded-full overflow-hidden bg-bb-surface border border-bb-border flex items-center justify-center text-bb-muted text-[10px] font-bold shrink-0">
+      {avatarSrc(post.user_avatar_url) ? (
+        <img
+          src={avatarSrc(post.user_avatar_url)!}
+          alt=""
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        (post.user_name ?? '?').charAt(0).toUpperCase()
+      )}
+    </div>
+  );
+
   return (
     <div className="flex items-start gap-3">
-      <div className="w-7 h-7 rounded-full overflow-hidden bg-bb-surface border border-bb-border flex items-center justify-center text-bb-muted text-[10px] font-bold shrink-0">
-        {avatarSrc(post.user_avatar_url) ? (
-          <img
-            src={avatarSrc(post.user_avatar_url)!}
-            alt=""
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          (post.user_name ?? '?').charAt(0).toUpperCase()
-        )}
-      </div>
+      {profileHref ? (
+        <Link to={profileHref} className="shrink-0">
+          {avatarBox}
+        </Link>
+      ) : (
+        avatarBox
+      )}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-bb-text text-xs font-medium">
-            {post.user_name ?? 'Unknown'}
-          </span>
+          {profileHref ? (
+            <Link
+              to={profileHref}
+              className="text-bb-text text-xs font-medium hover:text-white transition-colors"
+            >
+              {post.user_name ?? 'Unknown'}
+            </Link>
+          ) : (
+            <span className="text-bb-text text-xs font-medium">
+              {post.user_name ?? 'Unknown'}
+            </span>
+          )}
           <span className="text-bb-dim text-[10px]">
             {new Date(post.created_at).toLocaleString()}
           </span>

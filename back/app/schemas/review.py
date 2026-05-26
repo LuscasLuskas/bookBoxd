@@ -18,6 +18,10 @@ class ReviewResponse(BaseModel):
     user_name: str | None = None
     user_avatar_url: str | None = None
     book_id: str
+    # Only populated when listing a user's reviews (so the profile can show
+    # which book each review is about). Null on book-page review lists.
+    book_title: str | None = None
+    book_cover_url: str | None = None
     rating: float | None = None  # blanked when the review is soft-deleted
     body: str | None
     is_public: bool

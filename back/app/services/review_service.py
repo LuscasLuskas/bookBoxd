@@ -153,6 +153,17 @@ class ReviewService:
         items = self._batch_to_responses(reviews, current_user.id)
         return ReviewListResponse(items=items, total=len(items))
 
+    def list_user_reviews(
+        self, viewer: User, target_id: str
+    ) -> ReviewListResponse:
+        """Public, non-deleted reviews written by `target_id`, enriched with book info."""
+        from app.core.access import assert_can_view_user
+
+        assert_can_view_user(self.db, viewer, target_id)
+        reviews = self.repo.list_public_for_user(target_id)
+        items = self._batch_to_responses(reviews, viewer.id, include_book=True)
+        return ReviewListResponse(items=items, total=len(items))
+
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
@@ -161,7 +172,10 @@ class ReviewService:
         return self._batch_to_responses([review], viewer_id)[0]
 
     def _batch_to_responses(
-        self, reviews: list[Review], viewer_id: str
+        self,
+        reviews: list[Review],
+        viewer_id: str,
+        include_book: bool = False,
     ) -> list[ReviewResponse]:
         if not reviews:
             return []
@@ -170,14 +184,19 @@ class ReviewService:
         live_ids = [r.id for r in reviews if not r.is_deleted]
         likes = self.repo.likes_count_for_reviews(live_ids)
         liked = self.repo.liked_by_user(viewer_id, live_ids)
-        return [self._build_response(r, likes, liked) for r in reviews]
+        return [self._build_response(r, likes, liked, include_book) for r in reviews]
 
     def _build_response(
         self,
         review: Review,
         likes: dict[str, int],
         liked: set[str],
+        include_book: bool = False,
     ) -> ReviewResponse:
+        book_title = review.book.title if include_book and review.book else None
+        book_cover_url = (
+            review.book.cover_url if include_book and review.book else None
+        )
         if review.is_deleted:
             # Strip identifying info so the placeholder is anonymous.
             return ReviewResponse(
@@ -186,6 +205,8 @@ class ReviewService:
                 user_name=None,
                 user_avatar_url=None,
                 book_id=review.book_id,
+                book_title=book_title,
+                book_cover_url=book_cover_url,
                 rating=None,
                 body=None,
                 is_public=review.is_public,
@@ -202,6 +223,8 @@ class ReviewService:
             user_name=review.user.name if review.user else None,
             user_avatar_url=review.user.avatar_url if review.user else None,
             book_id=review.book_id,
+            book_title=book_title,
+            book_cover_url=book_cover_url,
             rating=review.rating,
             body=review.body,
             is_public=review.is_public,

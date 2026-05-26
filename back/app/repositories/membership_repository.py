@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from app.models.membership import Membership, MembershipStatus
 
@@ -48,3 +48,20 @@ class MembershipRepository:
 
     def delete_by_user(self, user_id: str) -> None:
         self.db.query(Membership).filter(Membership.user_id == user_id).delete()
+
+    def shares_active_club(self, user_a_id: str, user_b_id: str) -> bool:
+        """True iff both users have an ACTIVE membership in some common club."""
+        a = aliased(Membership)
+        b = aliased(Membership)
+        row = (
+            self.db.query(a.club_id)
+            .join(b, a.club_id == b.club_id)
+            .filter(
+                a.user_id == user_a_id,
+                a.status == MembershipStatus.ACTIVE,
+                b.user_id == user_b_id,
+                b.status == MembershipStatus.ACTIVE,
+            )
+            .first()
+        )
+        return row is not None

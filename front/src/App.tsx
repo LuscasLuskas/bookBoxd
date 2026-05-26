@@ -13,6 +13,7 @@ import Clubs from './pages/Clubs';
 import ClubDetail from './pages/ClubDetail';
 import ClubForum from './pages/ClubForum';
 import Profile from './pages/Profile';
+import UserProfile from './pages/UserProfile';
 
 function Guard({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -134,6 +135,17 @@ function AppRoutes() {
           <Guard>
             <Layout>
               <Profile />
+            </Layout>
+          </Guard>
+        }
+      />
+
+      <Route
+        path="/users/:userId"
+        element={
+          <Guard>
+            <Layout>
+              <UserProfile />
             </Layout>
           </Guard>
         }

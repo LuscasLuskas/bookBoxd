@@ -28,6 +28,19 @@ class ReviewRepository:
             .all()
         )
 
+    def list_public_for_user(self, user_id: str) -> list[Review]:
+        return (
+            self.db.query(Review)
+            .options(joinedload(Review.user), joinedload(Review.book))
+            .filter(
+                Review.user_id == user_id,
+                Review.is_public.is_(True),
+                Review.is_deleted.is_(False),
+            )
+            .order_by(Review.created_at.desc())
+            .all()
+        )
+
     def rating_stats_for_books(
         self, book_ids: list[str]
     ) -> dict[str, tuple[float, int]]:
