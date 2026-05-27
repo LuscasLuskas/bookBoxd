@@ -7,15 +7,21 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 
 from app.controllers import (
     user_controller,
 )
+from app.core.config import settings
 from app.middlewares.access_log_middleware import AccessLogMiddleware
+from app.middlewares.security_headers_middleware import SecurityHeadersMiddleware
 from app.controllers import auth_controller, book_club_controller, book_controller, club_book_controller, membership_controller, monthly_book_controller, user_book_controller, genre_controller, tag_controller, shelf_controller, review_controller, forum_controller, reading_goal_controller
 
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["300/minute"],
+)
 
 app = FastAPI(
     title="BookBoxd API",
@@ -28,13 +34,15 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(AccessLogMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 @app.exception_handler(RequestValidationError)

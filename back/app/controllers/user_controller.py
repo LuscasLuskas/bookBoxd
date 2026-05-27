@@ -1,8 +1,12 @@
-from fastapi import APIRouter, Depends, File, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, status
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_master
+
+limiter = Limiter(key_func=get_remote_address)
 from app.models.user import User
 from app.models.user_book import UserBookStatus
 from app.schemas.review import ReviewListResponse
@@ -41,7 +45,9 @@ def update_me(
 
 
 @router.post("/me/avatar", response_model=UserResponse)
+@limiter.limit("10/minute")
 def upload_avatar(
+    request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),

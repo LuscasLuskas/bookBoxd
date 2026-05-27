@@ -1,0 +1,33 @@
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Env files (passed via docker-compose, not baked into image)
+.env
+.env.*
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# User uploads (must be a volume, not baked in)
+uploads/
+
+# Dev-only
+tests/
+*.md
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Docker
+Dockerfile
+Dockerfile.prod
+docker-compose*.yml

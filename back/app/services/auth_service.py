@@ -11,6 +11,7 @@ from app.repositories.user_repository import UserRepository
 
 
 GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo"
+GOOGLE_VALID_ISSUERS = {"accounts.google.com", "https://accounts.google.com"}
 
 
 class AuthService:
@@ -39,6 +40,17 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token não pertence a este aplicativo",
+            )
+        if data.get("iss") not in GOOGLE_VALID_ISSUERS:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Emissor do token não é o Google",
+            )
+        # tokeninfo returns "email_verified" as the string "true"/"false".
+        if str(data.get("email_verified")).lower() != "true":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Email do Google não verificado",
             )
         return data
 

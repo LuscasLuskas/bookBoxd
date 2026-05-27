@@ -1,7 +1,9 @@
+import io
 import os
 import uuid
 
 from fastapi import HTTPException, UploadFile, status
+from PIL import Image, UnidentifiedImageError
 from sqlalchemy.orm import Session
 
 from app.models.user import Role, User
@@ -14,11 +16,13 @@ from app.schemas.user import UserUpdate
 
 AVATAR_DIR = "uploads/avatars"
 MAX_AVATAR_BYTES = 5 * 1024 * 1024
-ALLOWED_AVATAR_TYPES = {
-    "image/jpeg": ".jpg",
-    "image/png": ".png",
-    "image/webp": ".webp",
-    "image/gif": ".gif",
+# Map of Pillow-detected image formats to safe extensions. Driven by what the
+# raw bytes actually are, not by the client-supplied Content-Type.
+ALLOWED_AVATAR_FORMATS = {
+    "JPEG": ".jpg",
+    "PNG": ".png",
+    "WEBP": ".webp",
+    "GIF": ".gif",
 }
 
 
@@ -62,18 +66,31 @@ class UserService:
         return self.user_repo.save(user)
 
     def update_avatar(self, user: User, file: UploadFile) -> User:
-        ext = ALLOWED_AVATAR_TYPES.get(file.content_type or "")
-        if not ext:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Formato inválido. Use JPG, PNG, WEBP ou GIF.",
-            )
-
-        contents = file.file.read()
+        # Read up to MAX+1 so we can reject oversized uploads without
+        # ever materializing more than the allowed size in memory.
+        contents = file.file.read(MAX_AVATAR_BYTES + 1)
         if len(contents) > MAX_AVATAR_BYTES:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Imagem muito grande (máximo 5MB).",
+            )
+
+        # Verify the bytes are a real image. verify() reads headers only and
+        # consumes the stream, so reopen on a fresh buffer for the extension.
+        try:
+            Image.open(io.BytesIO(contents)).verify()
+            image_format = Image.open(io.BytesIO(contents)).format
+        except (UnidentifiedImageError, OSError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Arquivo não é uma imagem válida.",
+            )
+
+        ext = ALLOWED_AVATAR_FORMATS.get(image_format or "")
+        if not ext:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Formato inválido. Use JPG, PNG, WEBP ou GIF.",
             )
 
         os.makedirs(AVATAR_DIR, exist_ok=True)

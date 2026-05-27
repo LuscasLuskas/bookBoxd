@@ -13,11 +13,13 @@ COPY . .
 RUN chown -R appuser:appgroup /app
 USER appuser
 
+ENV PORT=8000
 EXPOSE 8000
 
-CMD ["gunicorn", "app.main:app", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--workers", "4", \
-     "--bind", "0.0.0.0:8000", \
-     "--timeout", "60", \
-     "--access-logfile", "-"]
+# Shell-form CMD so ${PORT} expands at container start (e.g. Fly sets $PORT=8080).
+CMD gunicorn app.main:app \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --workers 4 \
+    --bind 0.0.0.0:${PORT} \
+    --timeout 60 \
+    --access-logfile -

@@ -28,15 +28,18 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       APP_ENV: production
       DEBUG: "false"
+      CORS_ORIGINS: ${CORS_ORIGINS}
     ports:
       - "8000:8000"
+    volumes:
+      - bookboxd_uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
     networks:
       - bookboxd-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      test: ["CMD-SHELL", "python -c 'import urllib.request,sys; sys.exit(0 if urllib.request.urlopen(\"http://localhost:8000/health\").status==200 else 1)'"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,6 +47,7 @@ services:
 
 volumes:
   postgres_data:
+  bookboxd_uploads:
 
 networks:
   bookboxd-network:
