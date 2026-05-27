@@ -14,6 +14,7 @@ from app.models.review import Review
 from app.models.review_like import ReviewLike
 from app.models.forum_thread import ForumThread
 from app.models.forum_post import ForumPost
+from app.models.reading_goal import ReadingGoal, DailyReadingLog
 
 __all__ = [
     "User", "Role",
@@ -30,4 +31,5 @@ __all__ = [
     "Shelf", "ShelfBook",
     "Review", "ReviewLike",
     "ForumThread", "ForumPost",
+    "ReadingGoal", "DailyReadingLog",
 ]

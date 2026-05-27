@@ -7,6 +7,7 @@ import { getLibraryStats } from '../api/userBooks';
 import { listBooks } from '../api/books';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ReadingGoalCard from '../components/ReadingGoalCard';
 import { avatarSrc } from '../utils/avatar';
 import { getBookGradient } from '../utils/bookCover';
 import type { Book, LibraryStats, UserBookStatus } from '../types';
@@ -359,6 +360,9 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      {/* Daily reading goal & streak (private) */}
+      <ReadingGoalCard />
 
       {/* Reading stats */}
       <div className="mb-6">

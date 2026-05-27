@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import BookMark from './BookMark';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -22,26 +23,17 @@ export default function Navbar() {
     }`;
 
   return (
-    <nav className="bg-bb-dark border-b border-bb-border sticky top-0 z-50">
+    <nav className="bg-black/70 backdrop-blur-md border-b border-bb-accent/10 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-12 gap-6">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0 group">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              className="w-5 h-5 text-bb-accent"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
+          {/* Logo — matches the book that lands here after login */}
+          <Link
+            to="/"
+            className="flex items-center gap-2 shrink-0 group transition-transform hover:-translate-y-px"
+          >
+            <BookMark size={20} className="shrink-0" />
             <span className="font-bold text-white text-base tracking-tight">
-              Book<span className="text-bb-accent">Boxd</span>
+              bookboxd
             </span>
           </Link>
 

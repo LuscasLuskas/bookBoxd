@@ -8,6 +8,7 @@ import {
   getUserReviews,
 } from '../api/users';
 import { getBook } from '../api/books';
+import { getPublicReadingStreak } from '../api/readingGoal';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ReviewCard from '../components/ReviewCard';
@@ -131,6 +132,12 @@ export default function UserProfile() {
   const reviewsQ = useQuery({
     queryKey: ['userProfile', userId, 'reviews'],
     queryFn: () => getUserReviews(userId!),
+    enabled: !!userId && !!profileQ.data,
+  });
+
+  const streakQ = useQuery({
+    queryKey: ['userProfile', userId, 'streak'],
+    queryFn: () => getPublicReadingStreak(userId!),
     enabled: !!userId && !!profileQ.data,
   });
 
@@ -266,6 +273,38 @@ export default function UserProfile() {
           )}
         </div>
       </div>
+
+      {/* Public reading streak (only if user opted in) */}
+      {streakQ.data && (
+        <div className="card p-5 mb-6">
+          <h2 className="text-bb-muted text-xs font-semibold uppercase tracking-wider mb-3">
+            Reading Streak
+          </h2>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-amber-400">
+                {streakQ.data.current_streak}
+              </p>
+              <p className="text-bb-muted text-xs mt-1">Current</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-bb-text">
+                {streakQ.data.longest_streak}
+              </p>
+              <p className="text-bb-muted text-xs mt-1">Longest</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-bb-text">
+                {streakQ.data.total_days_met}
+              </p>
+              <p className="text-bb-muted text-xs mt-1">Days met</p>
+            </div>
+          </div>
+          <p className="text-bb-dim text-xs mt-3 text-center">
+            Reading {streakQ.data.pages_per_day} pages / day
+          </p>
+        </div>
+      )}
 
       {/* Stats grid */}
       <div className="mb-6">

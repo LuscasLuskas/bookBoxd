@@ -285,3 +285,44 @@ export interface RegisterListResponse {
   items: ReadingRegister[];
   total: number;
 }
+
+export interface ReadingGoal {
+  id: string;
+  user_id: string;
+  pages_per_day: number;
+  streak_public: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PublicReadingStreak {
+  user_id: string;
+  pages_per_day: number;
+  current_streak: number;
+  longest_streak: number;
+  total_days_met: number;
+}
+
+export interface DailyReadingLog {
+  id: string;
+  user_id: string;
+  date: string;
+  pages_read: number;
+  goal_target: number;
+  goal_met: boolean;
+  updated_at: string;
+}
+
+export interface ReadingStreakStats {
+  current_streak: number;
+  longest_streak: number;
+  total_days_met: number;
+  today_logged: boolean;
+  today_goal_met: boolean;
+  today_pages_read: number;
+  today_goal_target: number | null;
+}
+
+export interface DailyLogHistory {
+  items: DailyReadingLog[];
+}

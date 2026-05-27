@@ -5,125 +5,133 @@ import type { CredentialResponse } from '@react-oauth/google';
 import toast from 'react-hot-toast';
 import { loginWithGoogle } from '../api/auth';
 import { useAuth } from '../contexts/AuthContext';
-import { getBookGradient } from '../utils/bookCover';
-
-const SAMPLE_TITLES = [
-  'The Great Gatsby', 'To Kill a Mockingbird', '1984', 'Pride and Prejudice',
-  'The Catcher in the Rye', 'Brave New World', 'One Hundred Years of Solitude',
-  'The Lord of the Rings', 'Harry Potter', 'Don Quixote', 'Crime and Punishment',
-  'Moby Dick', 'War and Peace', 'Anna Karenina', 'The Brothers Karamazov',
-  'Ulysses', 'Hamlet', 'Lolita', 'The Odyssey', 'Middlemarch',
-  'Jane Eyre', 'Wuthering Heights', 'David Copperfield', 'Madame Bovary',
-  'In Search of Lost Time', 'The Trial', 'The Metamorphosis', 'Invisible Man',
-  'Beloved', 'The Sound and the Fury', 'As I Lay Dying', 'Light in August',
-  'Catch-22', 'Slaughterhouse-Five', 'The Sun Also Rises', 'A Farewell to Arms',
-  'For Whom the Bell Tolls', 'The Old Man and the Sea', 'East of Eden',
-  'Of Mice and Men', 'Grapes of Wrath', 'To the Lighthouse', 'Mrs Dalloway',
-  'The Waves', 'Orlando', 'A Room With a View', 'Howards End', 'The Remains of the Day',
-  'Never Let Me Go', 'The Unconsoled', 'Disgrace', 'Waiting for the Barbarians',
-  'The God of Small Things', 'Midnight Children', 'White Teeth', 'Atonement',
-  'Saturday', 'On Chesil Beach', 'Amsterdam', 'The Corrections', 'Freedom',
-  'The Road', 'No Country for Old Men', 'Blood Meridian', 'Suttree',
-];
-
-function BackgroundGrid() {
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      <div
-        className="grid gap-1.5 p-2"
-        style={{ gridTemplateColumns: 'repeat(9, 1fr)' }}
-      >
-        {SAMPLE_TITLES.map((title, i) => (
-          <div
-            key={i}
-            className="aspect-[2/3] rounded-sm opacity-40"
-            style={{ background: getBookGradient(title) }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
+import BookMark from '../components/BookMark';
+import Bookshelf from '../components/Bookshelf';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [flyingHome, setFlyingHome] = useState(false);
 
   const handleSuccess = async (res: CredentialResponse) => {
     if (!res.credential) return;
     setLoading(true);
     try {
       const token = await loginWithGoogle(res.credential);
-      login(token);
-      navigate('/');
+      setFlyingHome(true);
+      window.setTimeout(() => {
+        login(token);
+        navigate('/');
+      }, 850);
     } catch (err: unknown) {
       const e = err as { response?: { data?: { detail?: string } } };
       toast.error(e?.response?.data?.detail || 'Authentication failed');
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen bg-bb-dark flex items-center justify-center overflow-hidden">
-      <BackgroundGrid />
-      <div className="absolute inset-0 bg-gradient-to-b from-bb-dark/60 via-bb-dark/80 to-bb-dark/95" />
+    <div className="relative min-h-screen bg-black flex flex-col overflow-hidden">
+      {/* Amber spotlight from top */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse 90% 60% at 50% -5%, rgba(232,160,0,0.32) 0%, rgba(232,160,0,0.08) 35%, rgba(0,0,0,0) 65%)',
+        }}
+      />
+      {/* Warm floor glow at the bottom */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 100% at 50% 110%, rgba(232,160,0,0.18) 0%, rgba(0,0,0,0) 70%)',
+        }}
+      />
+      {/* Faint grid */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.06]"
+        style={{
+          backgroundImage:
+            'linear-gradient(to right, #e8a000 1px, transparent 1px), linear-gradient(to bottom, #e8a000 1px, transparent 1px)',
+          backgroundSize: '80px 80px',
+          maskImage:
+            'radial-gradient(ellipse 70% 60% at 50% 50%, black 30%, transparent 75%)',
+          WebkitMaskImage:
+            'radial-gradient(ellipse 70% 60% at 50% 50%, black 30%, transparent 75%)',
+        }}
+      />
 
-      <div className="relative z-10 w-full max-w-sm px-4">
-        {/* Branding */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-bb-accent/10 border border-bb-accent/20 mb-5">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              className="w-8 h-8 text-bb-accent"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
+      {/* Header — destination of the book animation */}
+      <header className="relative z-10 px-6 sm:px-10 py-5 flex items-center gap-2">
+        <div className="w-6 h-6 relative">
+          <div
+            className={`absolute inset-0 transition-opacity duration-300 ${
+              flyingHome ? 'opacity-100 delay-[700ms]' : 'opacity-0'
+            }`}
+          >
+            <BookMark size={24} />
           </div>
-          <h1 className="text-4xl font-bold text-white tracking-tight">
-            Book<span className="text-bb-accent">Boxd</span>
-          </h1>
-          <p className="text-bb-muted mt-2 text-sm leading-relaxed">
-            Track your reading journey.<br />Discover. Connect. Share.
-          </p>
         </div>
+        <span className="text-white text-sm font-bold tracking-tight">bookboxd</span>
+        <span className="ml-auto text-bb-accent text-xs font-medium tracking-wider uppercase">
+          Beta
+        </span>
+      </header>
 
-        {/* Card */}
-        <div className="card p-6">
-          <h2 className="text-center text-bb-text font-medium mb-6 text-sm uppercase tracking-wider">
-            Sign in to continue
-          </h2>
+      {/* Centered hero */}
+      <main className="relative z-10 flex-1 flex items-center justify-center px-6">
+        <div className="w-full max-w-md text-center">
+          {/* Animated bookshelf — books fall and return on their own slow cycles */}
+          <div className="mx-auto mb-8 flex justify-center">
+            <Bookshelf flying={flyingHome} />
+          </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-4">
-              <div className="w-6 h-6 border-2 border-bb-border border-t-bb-accent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <div className="flex justify-center">
+          <h1 className="text-white text-5xl sm:text-6xl font-bold tracking-tight leading-[1.05]">
+            Welcome to <span className="text-bb-accent">bookboxd</span>.
+          </h1>
+          <p className="text-neutral-400 mt-4 text-base sm:text-lg leading-relaxed">
+            Sign in to keep track of what you read.
+          </p>
+
+          <div className="mt-10 flex justify-center">
+            {loading && !flyingHome ? (
+              <div className="flex items-center py-3">
+                <div className="w-5 h-5 border-2 border-neutral-700 border-t-bb-accent rounded-full animate-spin" />
+                <span className="ml-3 text-neutral-400 text-sm">Signing you in…</span>
+              </div>
+            ) : flyingHome ? (
+              <div className="py-3 text-bb-accent text-sm font-medium">
+                Welcome back.
+              </div>
+            ) : (
               <GoogleLogin
                 onSuccess={handleSuccess}
                 onError={() => toast.error('Google login failed')}
                 theme="filled_black"
-                shape="pill"
+                shape="rectangular"
                 size="large"
+                width="320"
                 text="signin_with"
               />
-            </div>
-          )}
+            )}
+          </div>
 
-          <p className="mt-6 text-center text-bb-dim text-xs">
-            By signing in, you agree to read more books than you'll ever finish.
-          </p>
+          <div className="mt-12 pt-6 border-t border-bb-accent/10">
+            <p className="text-neutral-500 text-xs leading-relaxed">
+              No followers. No feed. No algorithm.<br />
+              Just the books you've read.
+            </p>
+          </div>
         </div>
-      </div>
+      </main>
+
+      <footer className="relative z-10 px-6 sm:px-10 py-6 flex items-center justify-between">
+        <span className="text-neutral-600 text-xs">© bookboxd</span>
+        <span className="text-bb-accent/70 text-xs tracking-wide">For people who read.</span>
+      </footer>
+
     </div>
   );
 }
