@@ -18,7 +18,7 @@ db = SessionLocal()
 try:
     user = User(
         id=str(uuid.uuid4()),
-        email=f"test-{uuid.uuid4().hex[:6]}@bookboxd.dev",
+        email=f"test-{uuid.uuid4().hex[:6]}@qulmus.dev",
         name="Test User" if role == Role.USER else "Master User",
         oauth_provider="google",
         oauth_id=f"test-{uuid.uuid4().hex}",

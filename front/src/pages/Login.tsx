@@ -74,7 +74,7 @@ export default function Login() {
             <BookMark size={24} />
           </div>
         </div>
-        <span className="text-white text-sm font-bold tracking-tight">bookboxd</span>
+        <span className="text-white text-sm font-bold tracking-tight">qulmus</span>
         <span className="ml-auto text-bb-accent text-xs font-medium tracking-wider uppercase">
           Beta
         </span>
@@ -89,7 +89,7 @@ export default function Login() {
           </div>
 
           <h1 className="text-white text-5xl sm:text-6xl font-bold tracking-tight leading-[1.05]">
-            Welcome to <span className="text-bb-accent">bookboxd</span>.
+            Welcome to <span className="text-bb-accent">qulmus</span>.
           </h1>
           <p className="text-neutral-400 mt-4 text-base sm:text-lg leading-relaxed">
             Sign in to keep track of what you read.
@@ -128,7 +128,7 @@ export default function Login() {
       </main>
 
       <footer className="relative z-10 px-6 sm:px-10 py-6 flex items-center justify-between">
-        <span className="text-neutral-600 text-xs">© bookboxd</span>
+        <span className="text-neutral-600 text-xs">© qulmus</span>
         <span className="text-bb-accent/70 text-xs tracking-wide">For people who read.</span>
       </footer>
 

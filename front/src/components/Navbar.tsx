@@ -33,7 +33,7 @@ export default function Navbar() {
           >
             <BookMark size={20} className="shrink-0" />
             <span className="font-bold text-white text-base tracking-tight">
-              bookboxd
+              qulmus
             </span>
           </Link>
 

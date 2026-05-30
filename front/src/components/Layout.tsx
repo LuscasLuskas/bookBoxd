@@ -40,7 +40,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <footer className="border-t border-bb-accent/10 mt-16">
           <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between flex-wrap gap-2">
             <p className="text-neutral-600 text-xs">
-              © 2026 <span className="text-neutral-500">bookboxd</span>
+              © 2026 <span className="text-neutral-500">qulmus</span>
             </p>
             <p className="text-bb-accent/70 text-xs italic tracking-wide">
               For people who read.
