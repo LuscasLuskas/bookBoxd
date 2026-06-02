@@ -12,6 +12,7 @@ from app.repositories.book_repository import BookRepository
 from app.repositories.membership_repository import MembershipRepository
 from app.repositories.user_book_repository import UserBookRepository
 from app.repositories.user_repository import UserRepository
+from app.core.config import settings
 from app.schemas.user import UserUpdate
 
 AVATAR_DIR = "uploads/avatars"
@@ -93,18 +94,30 @@ class UserService:
                 detail="Formato inválido. Use JPG, PNG, WEBP ou GIF.",
             )
 
-        os.makedirs(AVATAR_DIR, exist_ok=True)
         filename = f"{user.id}_{uuid.uuid4().hex[:8]}{ext}"
-        with open(os.path.join(AVATAR_DIR, filename), "wb") as out:
-            out.write(contents)
 
-        previous = user.avatar_url
-        user.avatar_url = f"/uploads/avatars/{filename}"
-        if previous and previous.startswith("/uploads/avatars/"):
-            try:
-                os.remove(previous.lstrip("/"))
-            except OSError:
-                pass
+        if settings.SUPABASE_URL and settings.SUPABASE_KEY:
+            from supabase import create_client
+            sb = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+
+            if user.avatar_url and "/storage/v1/object/public/avatars/" in user.avatar_url:
+                old_path = user.avatar_url.split("/storage/v1/object/public/avatars/")[-1]
+                sb.storage.from_("avatars").remove([old_path])
+
+            mime = {".jpg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif"}.get(ext, "image/jpeg")
+            sb.storage.from_("avatars").upload(filename, contents, {"content-type": mime, "upsert": "true"})
+            user.avatar_url = sb.storage.from_("avatars").get_public_url(filename)
+        else:
+            os.makedirs(AVATAR_DIR, exist_ok=True)
+            with open(os.path.join(AVATAR_DIR, filename), "wb") as out:
+                out.write(contents)
+            previous = user.avatar_url
+            user.avatar_url = f"/uploads/avatars/{filename}"
+            if previous and previous.startswith("/uploads/avatars/"):
+                try:
+                    os.remove(previous.lstrip("/"))
+                except OSError:
+                    pass
 
         return self.user_repo.save(user)
 

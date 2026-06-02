@@ -58,9 +58,10 @@ def health():
     return {"status": "ok"}
 
 
-# Uploaded files (profile photos) — served as static assets.
-os.makedirs("uploads/avatars", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# Local static files only in development (production uses Supabase Storage).
+if not settings.SUPABASE_URL:
+    os.makedirs("uploads/avatars", exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.include_router(auth_controller.router)
 app.include_router(user_controller.router)

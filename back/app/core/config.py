@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     # CORS — comma-separated origins, e.g. "https://app.example.com,https://www.example.com"
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
 
+    # Supabase Storage (optional — if set, avatars are stored in the cloud instead of local disk)
+    SUPABASE_URL: str = ""
+    SUPABASE_KEY: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property
